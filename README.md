@@ -2,6 +2,13 @@
 
 Landing page tiếng Việt, HTML/CSS/JavaScript thuần, cho Baccarat 540 Trắng 50ml.
 
+## Xem website
+
+- Landing page: https://nguyenbao30122000-jpg.github.io/baccarat-540-blanc-landing-page/
+- Duyệt giao diện máy tính và điện thoại: https://nguyenbao30122000-jpg.github.io/baccarat-540-blanc-landing-page/review.html
+
+GitHub Pages phục vụ nhánh `main`, thư mục `/ (root)`. File `index.html` ở gốc là trang chủ; `.nojekyll` giữ nguyên website HTML tĩnh. README này chỉ là hướng dẫn mã nguồn.
+
 ## Mở và chỉnh sửa
 
 - `dist/index.html`: landing page chính, 12 phần nội dung.
@@ -51,4 +58,8 @@ Trang được xuất bản riêng tư để duyệt. Khi mở bán công khai c
 
 ## Bản sao GitHub
 
-Repository này chứa mã nguồn độc lập và các ảnh gốc hiện có trong source-assets. Khi triển khai, chọn thư mục dist làm thư mục xuất bản. Cấu hình định danh riêng của bản xem duyệt trên Sites không nằm trong repository. Thẻ og:image cần cập nhật theo tên miền mới nếu triển khai ở một nơi khác.
+Repository này chứa mã nguồn độc lập và các ảnh gốc hiện có trong source-assets. GitHub Pages dùng `index.html` ở gốc, tham chiếu CSS, JavaScript, ảnh và font trong `dist/`. `review.html` ở gốc dùng cùng trang chủ đó để duyệt các kích thước màn hình.
+
+Bản `dist/index.html` vẫn hoạt động độc lập để triển khai toàn bộ thư mục `dist` lên hosting khác. Khi sửa nội dung HTML, cập nhật đồng bộ `dist/index.html` và `index.html` ở gốc; bản ở gốc thêm tiền tố `dist/` vào các đường dẫn tài nguyên, còn anchor nội bộ giữ nguyên. Các file CSS, JavaScript, ảnh và font chỉ có một bản trong `dist/`.
+
+Cấu hình định danh riêng của bản xem duyệt trên Sites không nằm trong repository. Thẻ `og:image` ở cả hai trang đã dùng URL GitHub Pages; cần cập nhật theo tên miền mới nếu triển khai ở một nơi khác.
