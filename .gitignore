@@ -1,0 +1,16 @@
+# Deployment identity and credentials
+.openai/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Local dependencies and temporary data
+node_modules/
+.cache/
+*.log
+tmp/
+temp/
+.DS_Store
+Thumbs.db
