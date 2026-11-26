@@ -45,10 +45,6 @@
     Number.isFinite(confirmedAt) && confirmedAt > 0 && confirmedAt <= Date.now() + 300000;
   if (!valid) { showUnavailable('invalid'); return; }
 
-  $('receipt-id').textContent = receipt.orderId.trim();
-  $('receipt-date').textContent = new Intl.DateTimeFormat('vi-VN', {
-    dateStyle: 'short', timeStyle: 'short', timeZone: 'Asia/Ho_Chi_Minh'
-  }).format(new Date(confirmedAt));
   $('receipt-quantity').textContent = receipt.quantity + ' chai × 50ml';
   $('receipt-subtotal').textContent = money(receipt.subtotal);
   $('receipt-shipping').textContent = receipt.shipping === 0 ? 'Miễn phí' : money(receipt.shipping);
