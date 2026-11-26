@@ -68,7 +68,7 @@
     });
   });
 
-  function selectBundle(value) {
+  function selectBundle(value, userInitiated = false) {
     if (!Object.prototype.hasOwnProperty.call(config.offers, value)) return;
     currentBundle = String(value);
     $$('input[name="bundle"]').forEach((input) => { input.checked = input.value === currentBundle; });
@@ -78,11 +78,18 @@
     $('#summary-total').textContent = money(offer.subtotal + offer.shipping);
     $('#bar-title').textContent = offer.quantity === 1 ? '540 Blanc · 50ml' : 'Bộ đôi · 2 × 50ml';
     $('#bar-price').textContent = money(offer.subtotal);
-    document.dispatchEvent(new CustomEvent('tfl:offer_selected', {detail: {quantity: offer.quantity, subtotal: offer.subtotal, shipping: offer.shipping}}));
+    document.dispatchEvent(new CustomEvent('tfl:offer_selected', {detail: {quantity: offer.quantity, userInitiated}}));
   }
-  $$('input[name="bundle"]').forEach((input) => input.addEventListener('change', () => selectBundle(input.value)));
-  $$('[data-select-bundle]').forEach((link) => link.addEventListener('click', () => selectBundle(link.dataset.selectBundle)));
+  $$('input[name="bundle"]').forEach((input) => input.addEventListener('change', () => selectBundle(input.value, true)));
+  $$('[data-select-bundle]').forEach((link) => link.addEventListener('click', () => selectBundle(link.dataset.selectBundle, true)));
   selectBundle('1');
+
+  function checkoutStarted() {
+    document.dispatchEvent(new CustomEvent('tfl:checkout_started', {
+      detail: {quantity: config.offers[currentBundle].quantity}
+    }));
+  }
+  form.addEventListener('input', checkoutStarted, {once: true});
 
   const fields = [
     {id: 'customer-name', error: 'name-error', validate: (value) => value.length >= 2 && /\p{L}/u.test(value), message: 'Bạn vui lòng nhập họ và tên.'},
@@ -151,7 +158,7 @@
       return;
     }
     const offer = config.offers[currentBundle];
-    currentOrder = {
+    const nextOrder = {
       product: config.productName,
       sku: 'TFL-540-BLANC-50',
       customerName: $('#customer-name').value.normalize('NFC').trim(),
@@ -165,6 +172,14 @@
       total: offer.subtotal + offer.shipping,
       currency: 'VND'
     };
+    // Keep the request ID when reviewing an unchanged order after a timeout.
+    const previous = currentOrder && Object.fromEntries(
+      Object.entries(currentOrder).filter(([key]) => key !== 'requestId')
+    );
+    const unchanged = previous && JSON.stringify(previous) === JSON.stringify(nextOrder);
+    nextOrder.requestId = unchanged ? currentOrder.requestId : window.TFLOrders.randomId();
+    currentOrder = nextOrder;
+    checkoutStarted();
     displayReview(currentOrder);
   });
   $('.dialog-close').addEventListener('click', closeDialog);
@@ -186,31 +201,35 @@
     button.disabled = true;
     button.textContent = 'Đang gửi thông tin…';
     status.textContent = '';
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
     try {
       const query = new URLSearchParams(window.location.search);
       const attribution = {};
       ['utm_source','utm_medium','utm_campaign','utm_content','utm_term'].forEach((key) => { if (query.has(key)) attribution[key] = query.get(key).slice(0,200); });
-      const response = await fetch(config.orderEndpoint, {
-        method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({...currentOrder, attribution, idempotencyKey: currentOrder.requestId || (currentOrder.requestId = crypto.randomUUID())}),
-        signal: controller.signal
+      const submittedOrder = currentOrder;
+      const result = await window.TFLOrders.submit({
+        ...submittedOrder,
+        attribution,
+        idempotencyKey: submittedOrder.requestId
+      }, {
+        endpoint: config.orderEndpoint,
+        transport: config.orderTransport,
+        timeoutMs: config.orderTimeoutMs
       });
-      const result = await response.json();
-      if (!response.ok || result.success !== true || !result.orderId) throw new Error('unconfirmed');
       $('#dialog-title').innerHTML = 'Đã nhận<br><em>yêu cầu của bạn.</em>';
       $('#dialog-intro').textContent = 'Mã đơn: ' + String(result.orderId);
       status.textContent = 'Thông tin đã được gửi đến cửa hàng.';
       $('#dialog-edit').hidden = true;
       currentOrder = null;
       button.textContent = 'Đóng';
-      document.dispatchEvent(new CustomEvent('tfl:order_received', {detail: {orderId: result.orderId}}));
+      document.dispatchEvent(new CustomEvent('tfl:order_received', {
+        detail: {orderId: String(result.orderId), quantity: submittedOrder.quantity, acknowledged: true}
+      }));
+      form.reset();
+      selectBundle('1');
     } catch (error) {
-      status.textContent = error.name === 'AbortError' ? 'Chưa xác nhận được trạng thái gửi đơn. Bạn có thể thử lại; mã yêu cầu được giữ nguyên.' : 'Chưa gửi được đơn hàng. Thông tin vẫn còn trên trang để bạn thử lại.';
+      status.textContent = ['AbortError', 'TimeoutError'].includes(error.name) ? 'Chưa xác nhận được trạng thái gửi đơn. Bạn có thể thử lại; mã yêu cầu được giữ nguyên.' : 'Chưa gửi được đơn hàng. Thông tin vẫn còn trên trang để bạn thử lại.';
       button.textContent = 'Thử gửi lại';
     } finally {
-      clearTimeout(timeout);
       sending = false;
       button.disabled = false;
     }

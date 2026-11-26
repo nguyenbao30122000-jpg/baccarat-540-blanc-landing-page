@@ -15,6 +15,9 @@ GitHub Pages phục vụ nhánh `main`, thư mục `/ (root)`. File `index.html`
 - `dist/styles.css`: giao diện responsive và quy tắc typography.
 - `dist/app.js`: menu, tầng hương dạng tab, lựa chọn combo, kiểm tra và xem lại đơn.
 - `dist/config.js`: chế độ form, endpoint và hai gói giá.
+- `dist/orders.js`: gửi đơn và chờ xác nhận đã lưu từ Apps Script.
+- `dist/tracking.js`: Google Analytics 4 và TNANO Replay.
+- `integrations/google-apps-script/`: bộ nhận đơn cho Google Sheet, hướng dẫn triển khai và kiểm tra.
 - `dist/review.html`: trình duyệt giao diện máy tính / tablet / điện thoại.
 - `dist/assets/`: 6 ảnh WebP tạo riêng cho concept, favicon, font Be Vietnam Pro và giấy phép OFL.
 
@@ -31,11 +34,26 @@ Combo tiết kiệm 100.000đ tiền sản phẩm so với 2 × 549.000đ. Khôn
 
 ## Trạng thái form
 
-Mặc định `mode: 'preview'`, `orderEndpoint: ''`. Thông tin chỉ dùng để xem lại trong trang; không gửi qua mạng, không phát sinh đơn, không lưu thông tin khách vào localStorage/cookie.
+Mặc định `mode: 'preview'`, `orderEndpoint: ''`. Form chỉ cho xem lại trong trang, chưa gửi đơn tới hệ thống nhận đơn. Mã xử lý form không lưu thông tin khách vào localStorage/cookie. Tracking hoạt động riêng như phần bên dưới.
 
-Để nhận đơn thật, cần endpoint HTTPS do cửa hàng quản lý, hỗ trợ POST JSON và CORS cho origin được dùng. Chỉ bật `mode: 'live'` sau khi cấu hình và kiểm tra endpoint đó. Endpoint phải xác thực dữ liệu, tự tính giá từ SKU/gói, chống trùng bằng `idempotencyKey` và chỉ trả `{ "success": true, "orderId": "..." }` khi đã lưu đơn thành công. Không tin giá do trình duyệt gửi. Nhánh live đã được chuẩn bị nhưng chưa kết nối hoặc kiểm thử với hệ thống nhận đơn thực tế.
+Đã chuẩn bị bộ nhận đơn cho Google Sheet **Baccarat 540 trắng**, ID `1O-QtB1kgtPPfwxzRHl6JlLfCnVb0javKbG8pCAaSoQQ`. Bộ nhận tạo tab `Don_hang_Web`, kiểm tra dữ liệu, tự tính giá và chống trùng bằng `idempotencyKey`. Mã ở `integrations/google-apps-script/Code.gs`; hướng dẫn triển khai nằm trong cùng thư mục.
 
-Payload gồm sản phẩm/SKU, số lượng, họ tên, điện thoại, địa chỉ, ghi chú, các khoản tiền, currency và UTM cho phép. Không đưa token hay khóa bí mật vào config.js. Có sự kiện DOM `tfl:offer_selected` và `tfl:order_received` để nối tracking theo hệ thống của cửa hàng; chưa cài Meta Pixel hoặc CAPI.
+**Chưa triển khai Apps Script và chưa bật nhận đơn thật.** Cần đăng nhập Google để triển khai Web app, lấy URL `/exec`, đặt URL đó vào `orderEndpoint` rồi bật `mode: 'live'` sau khi kiểm thử. Google Sheet URL không phải endpoint nhận POST của form.
+
+Transport `apps-script` gửi form POST vào iframe và chờ thông điệp xác nhận từ Google, có kiểm tra nguồn, iframe, request ID và token phản hồi. Chỉ hiển thị thành công sau xác nhận đã lưu đơn; timeout vẫn giữ cùng mã yêu cầu khi thử lại. Không suy ra thành công từ iframe load hoặc phản hồi opaque `no-cors`. Nhánh JSON/CORS vẫn có sẵn cho endpoint HTTPS khác.
+
+Payload gồm sản phẩm/SKU, số lượng, họ tên, điện thoại, địa chỉ, ghi chú, các khoản tiền, currency và UTM cho phép. Không đưa token đăng nhập hay khóa bí mật vào config.js. Không cài Meta Pixel hoặc CAPI.
+
+## Tracking đã cấu hình
+
+- GA4: `G-YNKR6EDF5D`. Các sự kiện: `page_view`, `view_item`, `cta_click`, `select_offer`, `begin_checkout`, `generate_lead`.
+- `generate_lead` chỉ phát sau xác nhận đã nhận đơn; không ghi nhận `purchase` cho yêu cầu đặt hàng chưa thanh toán. Tên, điện thoại, địa chỉ, ghi chú và mã đơn không được đưa vào payload GA.
+- Giữ nguồn chiến dịch bằng 6 tham số UTM cho phép, không gửi toàn bộ query URL.
+- TNANO Replay tải đúng script do chủ cửa hàng cung cấp và gọi `window.TNANOReplay.initReplay({endpoint: 'https://tnano-session-replay.baovan-tnano.workers.dev'})`.
+- Các dịch vụ tải bất đồng bộ, lỗi của tracking không chặn form. Bản iframe xem giao diện và localhost không gửi tracking. Website HTTPS công khai vẫn có tracking khi form còn preview.
+- Đã thêm marker `rr-block`, `rr-mask`, `data-private` vào trường khách và phần xem lại đơn. **Chưa xác minh thư viện TNANO tuân thủ các marker hoặc đã che thông tin khách**: URL source trả HTTP 403 trong môi trường kiểm tra. Không coi lời gọi init thành công là bằng chứng đã nhận bản ghi.
+
+Trạng thái tải kỹ thuật có thể kiểm tra qua thuộc tính `data-tfl-analytics` và `data-tfl-replay` trên thẻ `html`. Dữ liệu trên GA Realtime và dashboard replay cần được xác minh trong tài khoản của chủ cửa hàng.
 
 Đây là mã nguồn landing page độc lập, không phải tệp dự án nội bộ .ladipage. Khi tích hợp vào LadiPage cần dùng phương án xuất bản/custom HTML tương thích với tài khoản hiện có hoặc dựng lại trong editor. Chưa chỉnh sửa trang đang chạy tại thefragrancelab.io.vn/sale.
 
@@ -54,7 +72,7 @@ Các câu slogan được sáng tác cho trang, không gắn tên người nổi
 - Form bắt lỗi trường trống và số điện thoại, xem lại đơn đúng giá, trạng thái preview không gửi đơn.
 - CTA mobile tự ẩn khi form đã vào vùng nhìn; hỗ trợ bàn phím, focus và reduced motion.
 
-Trang được xuất bản riêng tư để duyệt. Khi mở bán công khai cần cập nhật thông tin sản phẩm/chính sách thực tế, kết nối nhận đơn, cấu hình tên miền và tracking theo yêu cầu của chủ cửa hàng.
+GitHub Pages là bản website công khai. Form còn ở chế độ duyệt trong khi chờ triển khai Google Apps Script; cấu hình tên miền riêng cũng chưa hoàn tất. Thiết kế, nội dung và giá được giữ nguyên trong lần tích hợp này.
 
 ## Bản sao GitHub
 

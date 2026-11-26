@@ -1,6 +1,12 @@
 window.TFL_CONFIG = Object.freeze({
   mode: 'preview',
   orderEndpoint: '',
+  orderTransport: 'apps-script',
+  orderTimeoutMs: 30000,
+  trackingEnabled: true,
+  analyticsId: 'G-YNKR6EDF5D',
+  replayScriptUrl: 'https://tnano-session-replay.baovan-tnano.workers.dev/recorder/tnano-replay.js',
+  replayEndpoint: 'https://tnano-session-replay.baovan-tnano.workers.dev',
   shopName: 'The Fragrance Lab',
   productName: 'Baccarat 540 Trắng',
   volumeMl: 50,
