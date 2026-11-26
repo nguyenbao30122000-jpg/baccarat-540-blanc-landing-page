@@ -1,0 +1,33 @@
+name: Prepare Ruby Pearl social image
+on:
+  push:
+    branches:
+      - work/ruby-pearl-share-image-20261126
+permissions: {}
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install image encoder
+        run: python -m pip install --disable-pip-version-check Pillow
+      - name: Export approved duo image for sharing
+        run: |
+          python - <<'PY'
+          import base64, hashlib, io, json, urllib.request
+          from PIL import Image
+          url = "https://raw.githubusercontent.com/nguyenbao30122000-jpg/baccarat-540-blanc-landing-page/9c5a08efc08c3880026f2ea571c5354578687563/dist/assets/tet-hero.webp"
+          with urllib.request.urlopen(url, timeout=30) as response:
+              original = response.read()
+          image = Image.open(io.BytesIO(original)).convert("RGB")
+          output = io.BytesIO()
+          image.save(output, format="JPEG", quality=90, optimize=True, subsampling=0)
+          data = output.getvalue()
+          header = b"blob " + str(len(data)).encode() + bytes([0])
+          sha = hashlib.sha1(header + data).hexdigest()
+          print("TFL_IMAGE_META " + json.dumps({"width": image.width, "height": image.height, "size": len(data), "sha": sha, "mime": "image/jpeg"}))
+          encoded = base64.b64encode(data).decode()
+          for offset in range(0, len(encoded), 12000):
+              print("TFL_IMAGE_CHUNK " + str(offset) + " " + encoded[offset:offset + 12000])
+          print("TFL_IMAGE_END")
+          PY
