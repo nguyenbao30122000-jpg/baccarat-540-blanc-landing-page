@@ -6,8 +6,8 @@ Storefront tiếng Việt cho hai phiên bản Baccarat 540 Trắng và Đỏ, c
 
 - Repository này triển khai storefront tại `https://thefragrancelabperfume.shop/` bằng GitHub Pages, nhánh `main`, thư mục gốc.
 - `index.html` ở gốc và `dist/index.html` có cùng nội dung; bản gốc thêm tiền tố `dist/` cho tài nguyên.
-- Form hoạt động ở `mode: 'preview'`: chọn sản phẩm, tính giá, kiểm tra dữ liệu và xem tóm tắt. Không gửi yêu cầu đến cửa hàng; không ghi dữ liệu khách vào localStorage/sessionStorage.
-- Bộ nhận đơn Google Apps Script v2 đã có mã nguồn và kiểm tra ngoại tuyến; chưa triển khai thay endpoint v1.
+- Form hiện ở `mode: 'preview'`: chọn sản phẩm, tính giá, kiểm tra dữ liệu và xem đầy đủ tóm tắt, không gửi yêu cầu đến cửa hàng. Sau khi bật live và nhận ACK v2 hợp lệ, thông tin đơn đầy đủ được giữ trong sessionStorage của tab để mở trang cảm ơn; không đưa dữ liệu khách vào URL, localStorage hay analytics.
+- Bộ nhận đơn Google Apps Script v2 đã có mã nguồn và kiểm tra ngoại tuyến; giữ nguyên spreadsheet, tab `Don_hang_Web`, property `ORDER_SHEET_NAME` và 23 cột gốc, chỉ thêm tám cột thông tin sản phẩm ở bên phải. Chưa triển khai thay receiver v1 đang chạy tại endpoint cũ.
 - Không có đơn thử nào được gửi vào Google Sheet.
 
 ## Ba lựa chọn
@@ -36,7 +36,10 @@ Mức tiết kiệm trình bày theo giá niêm yết: 3.446.000đ cho một cha
 - `scripts/sync-pages.mjs`: đồng bộ root `index.html` từ `dist/index.html`, giữ đúng đường dẫn tài nguyên và ảnh thay đổi theo lựa chọn.
 - `dist/tracking.js`: giữ GA4, Meta Pixel và TNANO của website gốc; sự kiện sản phẩm phân biệt Trắng, Đỏ và combo.
 - `review.html` và `dist/review.html`: xem giao diện ở các kích thước; không phát tracking trong iframe.
-- `cam-on.html` và `dist/cam-on.html`: đường dẫn cũ được giữ tương thích, dẫn về bộ sưu tập và không tự xác nhận đơn hàng.
+- `cam-on.html` và `dist/cam-on.html`: trang cảm ơn đầy đủ sản phẩm, số lượng từng loại, họ tên, số điện thoại, địa chỉ, lời nhắn, tiền hàng, phí ship và thành tiền. Chỉ hiển thị xác nhận khi có receipt hợp lệ được tạo sau ACK.
+- `dist/receipt.js`: tạo và kiểm tra receipt với catalog/SKU/giá, lưu trong session của tab sau ACK; storage bị chặn thì hiển thị đủ chi tiết trong hộp thoại, không yêu cầu khách đặt lại.
+- `dist/thank-you.js`, `dist/thank-you.css`: giao diện biên nhận, dùng font tiếng Việt hiện tại, không tải pixel hay session replay.
+- `tests/receipt-tests.js`: kiểm tra dữ liệu biên nhận, các lỗi lưu trữ, an toàn render và ranh giới preview/live.
 - `design/asset-prompts.txt`: prompt và nguồn tham chiếu của các ảnh ImageGen.
 - `design/tet-product-prompts.txt`, `design/tet-lifestyle-prompts.txt`: prompt, tham chiếu và cách dùng bộ ảnh mới mùa Tết.
 - `design/font-notes.txt`: nguồn chính thức, giấy phép, cách chuẩn bị và kiểm tra bộ font tiếng Việt mới.
@@ -50,14 +53,17 @@ node --check dist/config.js
 node --check dist/tracking.js
 node tests/frontend-tests.js
 node tests/tracking-tests.js
+node tests/receipt-tests.js
 node integrations/google-apps-script/receiver-test.js
 ```
 
-Bộ kiểm tra gồm 75 kiểm tra ngoại tuyến: 51 cho frontend, 9 tình huống tracking và 15 cho receiver. Kiểm tra frontend bổ sung giá niêm yết, số tiền giảm và ba ảnh đặt hàng riêng, đồng thời giữ các kiểm tra hợp đồng payload/health/ACK. Các lệnh trên không gửi đơn thật hoặc gọi dịch vụ analytics.
+Bộ kiểm tra gồm 106 trường hợp ngoại tuyến: 51 frontend, 9 tracking, 27 receipt và 19 receiver. Các kiểm tra receiver bao gồm giữ nguyên 23 cột và dữ liệu đơn cũ. Kiểm tra frontend bổ sung giá niêm yết, số tiền giảm và ba ảnh đặt hàng riêng, đồng thời giữ các kiểm tra hợp đồng payload/health/ACK. Các lệnh trên không gửi đơn thật hoặc gọi dịch vụ analytics.
 
 Khi duyệt giao diện cần kiểm tra desktop và khung điện thoại 375px/345px: không tràn ngang, chữ có dấu và chữ nghiêng hiển thị đúng, ảnh không cắt sai chủ thể, ba lựa chọn đổi đúng ảnh/giá niêm yết/giá Tết/phí ship, menu và modal preview hoạt động. Kiểm tra ngoại tuyến và giao diện không thay thế thử nghiệm triển khai Google thật.
 
 ## Thiết kế và nội dung
+
+Thông điệp mới: “Hãy chọn cách bạn xuất hiện”; “Đỏ — màu của quyền lực và bản lĩnh”; “Trắng — màu của thanh lịch và tinh tế”; “Xuất hiện là khoảnh khắc. Được nhớ là dấu ấn.” Các mô tả này định vị phong cách, không phân loại giới tính hoặc hứa hẹn tác động đến người khác.
 
 Hệ màu kem sáng, đỏ rượu và vàng champagne. Chủ đề “Tết trao hương, gửi yêu thương” xuyên suốt thông báo đầu trang, mở đầu, bộ sưu tập, câu chuyện gặp gỡ, hai phần cho nàng/chàng, ưu đãi quà Tết và chọn mua. Những câu nói là nội dung thương hiệu, không gắn với khách hàng hoặc giả làm lời chứng thực. Không dùng số lượng đã bán, tồn kho hay đồng hồ đếm ngược chưa có dữ liệu.
 
@@ -74,7 +80,7 @@ Sản phẩm được đưa lên đầu màn hình điện thoại; thanh chọn
 - Hộp quà, hoa và phụ kiện phối cảnh không thuộc combo; nội dung tại phần ưu đãi và FAQ nói rõ điều này.
 - Trang `/sale` có tiêu đề và ảnh ghi 70ml nhưng form ghi 50ml. Bản này tạm dùng 50ml theo form, cần chủ cửa hàng chốt dung tích giao thực tế.
 - Chưa xác minh hãng/nguồn gốc hàng; website không tự thêm cam kết “chính hãng” hay thời gian lưu hương cố định.
-- Hotline 0358885789 xuất hiện trong popup cảm ơn của trang `/sale`; không tự gắn nhãn Zalo khi chưa xác nhận tài khoản.
+- Theo yêu cầu chủ cửa hàng, đã bỏ số điện thoại cá nhân và liên kết gọi khỏi trang chủ, trang cảm ơn, cấu hình frontend và tài liệu hiện tại. Trường số điện thoại khách hàng vẫn được giữ để nhận đơn.
 
 ## Đồng bộ và triển khai
 
@@ -86,19 +92,19 @@ GitHub Pages phục vụ nhánh `main`, thư mục gốc. Sau khi sửa HTML, CS
 node scripts/sync-pages.mjs
 ```
 
-Lệnh này gắn phiên bản theo SHA-256 của CSS/JS và đồng bộ hai trang chủ. Nhờ đó, người từng mở bản cũ không nhận HTML mới ghép với CSS hoặc JavaScript còn lưu trong cache. Chạy lại không làm đổi phiên bản nếu nội dung tài nguyên giữ nguyên.
+Lệnh này gắn phiên bản theo SHA-256 của CSS/JS và đồng bộ cả trang chủ lẫn trang cảm ơn ở thư mục gốc và dist. Nhờ đó, người từng mở bản cũ không nhận HTML mới ghép với CSS hoặc JavaScript còn lưu trong cache. Chạy lại không làm đổi phiên bản nếu nội dung tài nguyên giữ nguyên.
 
 Giữ `CNAME` là `thefragrancelabperfume.shop` và `.nojekyll`. Không có bước build hay dependency bên ngoài. Ảnh OG và canonical trỏ về tên miền thật; `noindex,nofollow` được giữ theo cấu hình trước đó trong khi thông tin sản phẩm và nhận đơn trực tuyến còn chờ chốt.
 
 Trước khi mở nhận đơn: xác nhận dung tích và hình chai giao thực tế; triển khai Apps Script v2 theo hướng dẫn trong `integrations/google-apps-script`; kiểm tra health v2 và đường lưu/ACK; cập nhật endpoint khi cần rồi đổi `mode` sang `live`. GitHub Pages chỉ cập nhật mã nguồn, không tự triển khai Apps Script. Chế độ live tự chặn receiver v1 hoặc giá không khớp. Bản cập nhật mùa Tết không sửa receiver hoặc bật nhận đơn.
 
-Form hiện ở preview, không tạo đơn; đã có liên kết gọi 0358885789 ngay dưới nút kiểm tra lựa chọn để khách liên hệ cửa hàng. Không thay thành `live` chỉ vì giao diện đã lên tên miền.
+Form hiện ở preview, không tạo đơn. GET chỉ đọc xác nhận endpoint thực tế vẫn trả `version:1`. Giữ endpoint cũ và cập nhật chính deployment Apps Script sang bản v2 trước khi đổi `mode` sang `live`. Không có đơn thử nào được gửi vào Sheet.
 
 ## Đo lường
 
 Giữ các định danh đã có của website gốc: GA4 `G-YNKR6EDF5D`, Meta Pixel `4503743036565644`, TNANO script và endpoint trong `dist/config.js`. Tracking chỉ chạy trên tên miền sản xuất được khai báo, không chạy trên localhost, bản xem riêng hoặc iframe duyệt giao diện. Các sự kiện lựa chọn/checkout chứa SKU và giá từng gói; không chứa họ tên, số điện thoại, địa chỉ hoặc ghi chú. Lead chỉ ghi nhận sau ACK v2 hợp lệ trong chế độ live; thao tác xem trước không phải đơn thành công. Không phát `purchase` cho yêu cầu đặt hàng chưa thanh toán.
 
-Toàn bộ form và hộp thoại đơn có `rr-block`, `rr-mask`, `data-private`, từng trường khách có marker che dữ liệu. Việc đã tải script replay không chứng minh đã ghi hoặc che dữ liệu: cần kiểm chứng bản ghi trong dashboard của chủ cửa hàng. Lỗi dịch vụ đo lường không làm gián đoạn lựa chọn hoặc đặt hàng.
+Trang cảm ơn không tải dịch vụ đo lường hoặc replay. Dữ liệu khách được render bằng `textContent`, không nội suy HTML. Toàn bộ form và hộp thoại đơn có `rr-block`, `rr-mask`, `data-private`, từng trường khách có marker che dữ liệu. Việc đã tải script replay không chứng minh đã ghi hoặc che dữ liệu: cần kiểm chứng bản ghi trong dashboard của chủ cửa hàng. Lỗi dịch vụ đo lường không làm gián đoạn lựa chọn hoặc đặt hàng.
 
 ## Nguồn đối chiếu
 

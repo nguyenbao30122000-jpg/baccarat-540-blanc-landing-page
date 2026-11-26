@@ -11,6 +11,13 @@ const copy = value => JSON.parse(JSON.stringify(value));
 const ORIGIN = 'https://thefragrancelabperfume.shop';
 const WHITE = 'TFL-540-BLANC-50';
 const RED = 'TFL-540-ROUGE-50';
+const LEGACY_HEADERS = [
+  'Thoi_gian_VN', 'Ma_don', 'Idempotency_key', 'Payload_hash', 'Trang_thai',
+  'San_pham', 'SKU', 'Dung_tich_ml', 'So_luong', 'Tien_san_pham',
+  'Phi_van_chuyen', 'Tong_thanh_toan', 'Tien_te', 'Ho_va_ten',
+  'Dien_thoai', 'Dia_chi', 'Ghi_chu', 'utm_source', 'utm_medium',
+  'utm_campaign', 'utm_content', 'utm_term', 'Nguon_website'
+];
 
 function harness() {
   const state = {sheets: new Map(), properties: {}, busy: false, locked: false,
@@ -83,7 +90,7 @@ function harness() {
   return {
     state, context, spreadsheet,
     call(name, ...args) { return context[name](...args); },
-    sheet() { return state.sheets.get('Don_hang_Web_v2'); }
+    sheet() { return state.sheets.get(state.properties.ORDER_SHEET_NAME || 'Don_hang_Web'); }
   };
 }
 
@@ -216,8 +223,8 @@ test('successful bridge ACK has matching request/token/offer and no customer PII
   assert.equal(result.duplicate, false);
   for (const field of ['customerName', 'phone', 'address', 'note']) assert.equal(field in result, false);
   assert.equal(h.sheet().rows.length, 2);
-  assert.equal(h.sheet().rows[1][9], 1); assert.equal(h.sheet().rows[1][10], 1);
-  assert.deepEqual(JSON.parse(h.sheet().rows[1][8]).map(item => item.sku), [WHITE, RED]);
+  assert.equal(h.sheet().rows[1][26], 1); assert.equal(h.sheet().rows[1][27], 1);
+  assert.deepEqual(JSON.parse(h.sheet().rows[1][25]).map(item => item.sku), [WHITE, RED]);
   assert.equal(h.state.locked, false);
 });
 
@@ -243,7 +250,7 @@ test('reuse of idempotency key with different customer or offer is rejected', ()
 test('rejects corrupt previously saved state rather than returning a success ACK', () => {
   const h = harness(); const p = payload();
   response(h.call('doPost', eventFor(p)));
-  h.sheet().rows[1][17] = 1;
+  h.sheet().rows[1][11] = 1;
   const result = response(h.call('doPost', eventFor(p)));
   assert.equal(result.success, false); assert.equal(result.code, 'ORDER_STATE_INVALID');
   assert.equal(h.state.writes, 1); assert.equal(h.state.locked, false);
@@ -289,20 +296,97 @@ test('formula-like customer text is neutralized in the sheet', () => {
   const h = harness(); const p = payload();
   p.note = '=IMPORTXML("https://example.invalid","x")';
   response(h.call('doPost', eventFor(p)));
-  assert.equal(h.sheet().rows[1][22], "'" + p.note);
-  assert.equal(h.sheet().rows[1][20], "'0901234567");
+  assert.equal(h.sheet().rows[1][16], "'" + p.note);
+  assert.equal(h.sheet().rows[1][14], "'0901234567");
 });
 
-test('v2 uses a separate worksheet and refuses a mismatched schema', () => {
+test('v2 preserves all legacy columns and existing rows while adding item metadata', () => {
   const h = harness();
-  const old = h.spreadsheet.insertSheet('Don_hang_Web'); old.rows = [['legacy header'], ['old order']];
+  const old = h.spreadsheet.insertSheet('Don_hang_Web');
+  const previousOrder = [
+    '2026-11-20 10:00:00', 'old-id', 'old-key', 'old-hash', 'Moi',
+    'Baccarat 540 Trắng', WHITE, 50, 1, 549000, 30000, 579000, 'VND',
+    "'Khách Cũ", "'0900000000", "'Địa chỉ kiểm thử cũ", "'Giữ nguyên", 'source',
+    'medium', 'campaign', 'content', 'term', ORIGIN
+  ];
+  old.rows = [copy(LEGACY_HEADERS), copy(previousOrder)];
   h.state.properties.ORDER_SHEET_NAME = 'Don_hang_Web';
-  const p = payload();
+  h.state.properties.ORDER_SHEET_NAME_V2 = 'Unrelated_v2_sheet';
+  const setup = h.call('setupOrderSheet');
+  assert.equal(setup.sheetName, 'Don_hang_Web');
+  assert.deepEqual(old.rows[0].slice(0, 23), LEGACY_HEADERS);
+  assert.deepEqual(old.rows[1], previousOrder);
+  assert.equal(old.rows.length, 2);
+  assert.equal(old.rows[0].length, 31);
+  assert.equal(h.state.writes, 0);
+  const afterSetup = copy(old.rows);
+  h.call('setupOrderSheet');
+  assert.deepEqual(old.rows, afterSetup);
+  const p = payload('duo');
   assert.equal(response(h.call('doPost', eventFor(p))).success, true);
-  assert.deepEqual(old.rows, [['legacy header'], ['old order']]);
-  h.sheet().rows[0][0] = 'wrong header';
-  assert.equal(response(h.call('doPost', eventFor(payload()))).code, 'SHEET_CONFIGURATION');
+  assert.deepEqual(old.rows[1], previousOrder);
+  assert.equal(old.rows.length, 3);
+  assert.deepEqual(Array.from(h.state.sheets.keys()), ['Don_hang_Web']);
+  assert.equal(old.rows[2][8], 2);
+  assert.equal(old.rows[2][11], 998000);
   assert.equal(h.state.writes, 1);
+});
+
+test('legacy product, SKU, quantity and money columns stay correct for every offer', () => {
+  const h = harness();
+  for (const id of ['white', 'red', 'duo']) {
+    const p = payload(id);
+    assert.equal(response(h.call('doPost', eventFor(p))).success, true);
+    const row = h.sheet().rows.at(-1);
+    const expectedSkus = p.items.map(item => item.sku);
+    assert.equal(row[6], expectedSkus.join(' + '));
+    assert.equal(row[5].includes(id === 'white' ? 'Trắng' : 'Đỏ'), true);
+    assert.equal(row[7], 50);
+    assert.equal(row[8], p.quantity);
+    assert.equal(row[9], p.subtotal);
+    assert.equal(row[10], p.shipping);
+    assert.equal(row[11], p.total);
+    assert.equal(row[12], 'VND');
+    assert.equal(row[24], id);
+    assert.deepEqual(JSON.parse(row[25]).map(item => item.sku), expectedSkus);
+  }
+});
+
+test('existing ORDER_SHEET_NAME override remains the sole worksheet destination', () => {
+  const h = harness();
+  h.state.properties.ORDER_SHEET_NAME = 'Orders_existing';
+  const existing = h.spreadsheet.insertSheet('Orders_existing');
+  existing.rows = [copy(LEGACY_HEADERS)];
+  assert.equal(response(h.call('doPost', eventFor(payload('red')))).success, true);
+  assert.equal(h.sheet(), existing);
+  assert.deepEqual(Array.from(h.state.sheets.keys()), ['Orders_existing']);
+  assert.deepEqual(existing.rows[0].slice(0, 23), LEGACY_HEADERS);
+});
+
+test('unknown legacy headers or occupied extension headers are never overwritten', () => {
+  for (const column of [0, 23]) {
+    const h = harness();
+    const existing = h.spreadsheet.insertSheet('Don_hang_Web');
+    existing.rows = [copy(LEGACY_HEADERS)];
+    existing.rows[0][column] = 'Custom_existing_header';
+    const before = copy(existing.rows);
+    assert.equal(response(h.call('doPost', eventFor(payload()))).code, 'SHEET_CONFIGURATION');
+    assert.deepEqual(existing.rows, before);
+    assert.equal(existing.columns, 26);
+    assert.equal(h.state.writes, 0);
+  }
+});
+
+test('unlabelled extension columns containing existing data are left untouched', () => {
+  const h = harness();
+  const existing = h.spreadsheet.insertSheet('Don_hang_Web');
+  existing.rows = [copy(LEGACY_HEADERS), Array(23).fill('')];
+  existing.rows[1][23] = 'Existing unlabelled value';
+  const before = copy(existing.rows);
+  assert.equal(response(h.call('doPost', eventFor(payload()))).code, 'SHEET_CONFIGURATION');
+  assert.deepEqual(existing.rows, before);
+  assert.equal(existing.columns, 26);
+  assert.equal(h.state.writes, 0);
 });
 
 let failures = 0;

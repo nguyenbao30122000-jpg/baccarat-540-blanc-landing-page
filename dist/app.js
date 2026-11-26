@@ -19,7 +19,7 @@
         {sku: 'TFL-540-ROUGE-50', volumeMl: 50, quantity: 1}]})
   });
   const money = (value) => new Intl.NumberFormat('vi-VN').format(value) + 'đ';
-  const tidy = (value) => typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : '';
+  const tidy = (value) => typeof value === 'string' ? value.normalize('NFC').trim().replace(/\s+/g, ' ') : '';
 
   function normalizePhone(value) {
     let phone = typeof value === 'string' ? value.trim().replace(/[\s().-]/g, '') : '';
@@ -31,16 +31,16 @@
     const customerName = tidy(input.customerName);
     const phone = normalizePhone(input.phone);
     const address = tidy(input.address);
-    const note = typeof input.note === 'string' ? input.note.trim() : '';
+    const note = typeof input.note === 'string' ? input.note.normalize('NFC').trim() : '';
     const errors = {};
     if (customerName.length < 2 || customerName.length > 100) {
       errors.customerName = 'Nhập họ tên từ 2 đến 100 ký tự.';
     }
     if (!phone) errors.phone = 'Nhập số di động Việt Nam, ví dụ 0912 345 678.';
-    if (address.length < 10 || address.length > 500) {
-      errors.address = 'Nhập địa chỉ đầy đủ từ 10 đến 500 ký tự.';
+    if (address.length < 10 || address.length > 350) {
+      errors.address = 'Nhập địa chỉ đầy đủ từ 10 đến 350 ký tự.';
     }
-    if (note.length > 1000) errors.note = 'Ghi chú tối đa 1.000 ký tự.';
+    if (note.length > 250) errors.note = 'Lời nhắn tối đa 250 ký tự.';
     return {valid: Object.keys(errors).length === 0, errors,
       value: {customerName, phone, address, note}};
   }
@@ -235,7 +235,7 @@
       }
     });
 
-    function showDialog(title, body, offer, orderId) {
+    function showDialog(title, body, offer, orderId, customer) {
       setText('dialog-title', title);
       setText('dialog-body', body);
       const summary = byId('dialog-summary');
@@ -245,6 +245,9 @@
           'Tiền sản phẩm: ' + money(offer.subtotal),
           'Vận chuyển: ' + (offer.shipping ? money(offer.shipping) : 'Miễn phí'),
           'Tổng thanh toán: ' + money(offer.total)];
+        if (customer) lines.push('Họ và tên: ' + customer.customerName,
+          'Số điện thoại: ' + customer.phone, 'Địa chỉ: ' + customer.address,
+          'Lời nhắn: ' + (customer.note || 'Không có lời nhắn thêm.'));
         if (orderId) lines.push('Mã yêu cầu: ' + orderId);
         lines.forEach((text) => {
           const line = document.createElement('p');
@@ -257,6 +260,21 @@
         if (!dialog.open) dialog.showModal();
       } else {
         status(title + '. ' + body, isLive ? 'success' : 'preview');
+      }
+    }
+
+    function showConfirmation(offer, receipt) {
+      status('Đã ghi nhận yêu cầu. Đang mở thông tin đơn hàng của bạn…', 'success');
+      let saved = false;
+      try { saved = root.TFLReceipt.save(root.sessionStorage, receipt); } catch (_) {}
+      if (saved) {
+        // Keep customer details in this tab's session, never in the URL or analytics.
+        setTimeout(() => root.location.assign(new URL('cam-on.html', root.location.href).href), 600);
+      } else {
+        status('Cửa hàng đã ghi nhận yêu cầu. Bạn không cần gửi lại.', 'success');
+        showDialog('Đã nhận yêu cầu của bạn',
+          'Thông tin đơn hàng của bạn ở bên dưới. Cửa hàng sẽ liên hệ để xác nhận giao hàng.',
+          offer, receipt.orderId, receipt);
       }
     }
     document.querySelectorAll('[data-close-dialog]').forEach((button) => {
@@ -308,7 +326,7 @@
         healthReady = true;
         status('');
       } catch (_) {
-        status('Hệ thống nhận đơn chưa sẵn sàng. Vui lòng liên hệ cửa hàng qua số điện thoại bên dưới.', 'error');
+        status('Hệ thống nhận đơn đang được cập nhật. Bạn vui lòng quay lại sau.', 'error');
       } finally {
         clearTimeout(timeout);
         updateSubmit();
@@ -332,7 +350,7 @@
       if (!isLive) {
         status('Đã kiểm tra thông tin trên bản xem trước. Chưa gửi đơn hàng.', 'preview');
         showDialog('Kiểm tra đơn hàng',
-          'Đây là bản xem trước. Thông tin chỉ được kiểm tra trên trình duyệt; chưa gửi đến cửa hàng và chưa tạo đơn hàng.', offer);
+          'Đây là bản xem trước. Thông tin chỉ được kiểm tra trên trình duyệt; chưa gửi đến cửa hàng và chưa tạo đơn hàng.', offer, null, checked.value);
         return;
       }
       if (!healthReady || !root.TFLOrders?.submit) {
@@ -342,9 +360,7 @@
       emitTracking('tfl:checkout_started', {offerId: selected, ready: true});
       const fingerprint = JSON.stringify({offerId: selected, ...checked.value});
       if (confirmation && confirmation.fingerprint === fingerprint) {
-        showDialog('Đã nhận yêu cầu của bạn',
-          'Yêu cầu này đã được ghi nhận. Cửa hàng sẽ liên hệ để xác nhận thông tin giao hàng.',
-          offer, confirmation.orderId);
+        showConfirmation(offer, confirmation.receipt);
         return;
       }
       busy = true;
@@ -360,13 +376,11 @@
           timeoutMs: config.orderTimeoutMs || 30000
         });
         if (!validateAck(result, payload)) throw new Error('unconfirmed');
-        confirmation = {fingerprint, orderId: result.orderId};
+        const receipt = root.TFLReceipt.create(payload, result);
+        confirmation = {fingerprint, orderId: result.orderId, receipt};
         emitTracking('tfl:order_received', {offerId: payload.offerId, orderId: result.orderId,
           acknowledged: true, schemaVersion: 2, receiverVersion: 2});
-        status('Đã nhận yêu cầu. Mã yêu cầu: ' + result.orderId + '.', 'success');
-        showDialog('Đã nhận yêu cầu của bạn',
-          'The Fragrance Lab sẽ liên hệ để xác nhận sản phẩm, thông tin giao hàng và tổng thanh toán.',
-          offer, result.orderId);
+        showConfirmation(offer, receipt);
       } catch (error) {
         const uncertain = error?.name === 'TimeoutError' || error?.name === 'AbortError' ||
           error?.message === 'confirmation_timeout' || error?.message === 'unconfirmed';

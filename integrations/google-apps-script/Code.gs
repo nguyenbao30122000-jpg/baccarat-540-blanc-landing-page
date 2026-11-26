@@ -1,11 +1,12 @@
 /**
  * The Fragrance Lab order receiver, schema v2.
  * Anonymous order requests; a success ACK confirms storage, not payment.
- * Deploy this source as a new Apps Script web-app version before enabling v2.
+ * Deploy this source as a new version of the existing Apps Script web app.
+ * Preserve the original worksheet and its first 23 columns; append v2 metadata.
  */
 const TFL_ORDER_CONFIG = Object.freeze({
   spreadsheetId: '1O-QtB1kgtPPfwxzRHl6JlLfCnVb0javKbG8pCAaSoQQ',
-  sheetName: 'Don_hang_Web_v2',
+  sheetName: 'Don_hang_Web',
   timezone: 'Asia/Ho_Chi_Minh',
   schemaVersion: 2,
   maxPayloadChars: 12000,
@@ -44,15 +45,20 @@ const TFL_ORDER_CONFIG = Object.freeze({
   })
 });
 
-const TFL_ORDER_HEADERS = Object.freeze([
+// The existing sheet layout is an integration contract. Never reorder these
+// columns or replace existing order rows when adding itemized order support.
+const TFL_ORDER_LEGACY_HEADERS = Object.freeze([
   'Thoi_gian_VN', 'Ma_don', 'Idempotency_key', 'Payload_hash', 'Trang_thai',
-  'Phien_ban', 'Ma_goi', 'Ten_goi', 'Chi_tiet_san_pham_JSON',
-  'So_chai_trang', 'So_chai_do', 'Tong_so_chai', 'Tong_dung_tich_ml',
-  'Gia_mua_le', 'Giam_combo', 'Tien_san_pham', 'Phi_van_chuyen',
-  'Tong_thanh_toan', 'Tien_te', 'Ho_va_ten', 'Dien_thoai', 'Dia_chi',
-  'Ghi_chu', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content',
-  'utm_term', 'Nguon_website'
+  'San_pham', 'SKU', 'Dung_tich_ml', 'So_luong', 'Tien_san_pham',
+  'Phi_van_chuyen', 'Tong_thanh_toan', 'Tien_te', 'Ho_va_ten',
+  'Dien_thoai', 'Dia_chi', 'Ghi_chu', 'utm_source', 'utm_medium',
+  'utm_campaign', 'utm_content', 'utm_term', 'Nguon_website'
 ]);
+const TFL_ORDER_EXTRA_HEADERS = Object.freeze([
+  'Phien_ban', 'Ma_goi', 'Chi_tiet_san_pham_JSON', 'So_chai_trang',
+  'So_chai_do', 'Tong_dung_tich_ml', 'Gia_mua_le', 'Giam_combo'
+]);
+const TFL_ORDER_HEADERS = Object.freeze(TFL_ORDER_LEGACY_HEADERS.concat(TFL_ORDER_EXTRA_HEADERS));
 
 const TFL_UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const TFL_RESPONSE_TOKEN_PATTERN = /^[A-Za-z0-9_-]{32,128}$/;
@@ -269,12 +275,14 @@ function saveOrder_(order, parentOrigin) {
         if (String(existing[3]) !== fingerprint) {
           fail_('REQUEST_CONFLICT', 'Yêu cầu này đã được dùng cho nội dung khác. Vui lòng tạo đơn mới.');
         }
-        if (!validUuid_(existing[1]) || Number(existing[5]) !== 2 ||
-            String(existing[6]) !== order.offerId || String(existing[8]) !== JSON.stringify(order.items) ||
-            Number(existing[11]) !== order.quantity || Number(existing[13]) !== order.retailSubtotal ||
-            Number(existing[14]) !== order.discount || Number(existing[15]) !== order.subtotal ||
-            Number(existing[16]) !== order.shipping || Number(existing[17]) !== order.total ||
-            String(existing[18]) !== 'VND') {
+        if (!validUuid_(existing[1]) || String(existing[5]) !== order.offerName ||
+            String(existing[6]) !== order.items.map(function (item) { return item.sku; }).join(' + ') ||
+            Number(existing[7]) !== 50 || Number(existing[8]) !== order.quantity ||
+            Number(existing[9]) !== order.subtotal || Number(existing[10]) !== order.shipping ||
+            Number(existing[11]) !== order.total || String(existing[12]) !== 'VND' ||
+            Number(existing[23]) !== 2 || String(existing[24]) !== order.offerId ||
+            String(existing[25]) !== JSON.stringify(order.items) ||
+            Number(existing[29]) !== order.retailSubtotal || Number(existing[30]) !== order.discount) {
           fail_('ORDER_STATE_INVALID', 'Cửa hàng cần kiểm tra lại trạng thái yêu cầu này.');
         }
         // Retry may follow a failed flush, so require a successful flush before ACK.
@@ -287,14 +295,15 @@ function saveOrder_(order, parentOrigin) {
     const redQuantity = order.items.filter(function (item) { return item.sku === 'TFL-540-ROUGE-50'; }).length;
     const row = [
       Utilities.formatDate(new Date(), TFL_ORDER_CONFIG.timezone, 'yyyy-MM-dd HH:mm:ss'),
-      orderId, order.idempotencyKey, fingerprint, 'Moi', 2,
-      order.offerId, order.offerName, JSON.stringify(order.items), whiteQuantity, redQuantity,
-      order.quantity, order.totalVolumeMl, order.retailSubtotal, order.discount,
-      order.subtotal, order.shipping, order.total, order.currency,
+      orderId, order.idempotencyKey, fingerprint, 'Moi', order.offerName,
+      order.items.map(function (item) { return item.sku; }).join(' + '), 50,
+      order.quantity, order.subtotal, order.shipping, order.total, order.currency,
       safeCell_(order.customerName), safeCell_(order.phone), safeCell_(order.address), safeCell_(order.note),
       safeCell_(order.attribution.utm_source), safeCell_(order.attribution.utm_medium),
       safeCell_(order.attribution.utm_campaign), safeCell_(order.attribution.utm_content),
-      safeCell_(order.attribution.utm_term), allowedOrigin_(parentOrigin) ? parentOrigin : ''
+      safeCell_(order.attribution.utm_term), allowedOrigin_(parentOrigin) ? parentOrigin : '',
+      2, order.offerId, JSON.stringify(order.items), whiteQuantity, redQuantity,
+      order.totalVolumeMl, order.retailSubtotal, order.discount
     ];
     sheet.appendRow(row);
     SpreadsheetApp.flush();
@@ -316,8 +325,9 @@ function orderAck_(order, orderId, duplicate) {
 }
 
 function orderSheet_() {
-  // Do not reuse v1 ORDER_SHEET_NAME: v2 has a separate schema and worksheet.
-  const configuredName = PropertiesService.getScriptProperties().getProperty('ORDER_SHEET_NAME_V2');
+  // Keep the original destination and property override. The new fields are
+  // appended to the right; existing headers and order rows are never rewritten.
+  const configuredName = PropertiesService.getScriptProperties().getProperty('ORDER_SHEET_NAME');
   const name = configuredName ? configuredName.trim() : TFL_ORDER_CONFIG.sheetName;
   if (!name || name.length > 100 || /[\\/?*:[\]]/.test(name)) {
     fail_('SHEET_CONFIGURATION', 'Trang tính nhận đơn chưa được cấu hình đúng.');
@@ -332,12 +342,41 @@ function orderSheet_() {
     sheet.getRange(1, 1, 1, TFL_ORDER_HEADERS.length).setValues([Array.from(TFL_ORDER_HEADERS)]);
     sheet.setFrozenRows(1);
   } else {
-    if (sheet.getMaxColumns() < TFL_ORDER_HEADERS.length) {
+    if (sheet.getMaxColumns() < TFL_ORDER_LEGACY_HEADERS.length) {
       fail_('SHEET_CONFIGURATION', 'Trang tính nhận đơn có cấu trúc khác. Cửa hàng cần kiểm tra.');
     }
-    const actual = sheet.getRange(1, 1, 1, TFL_ORDER_HEADERS.length).getDisplayValues()[0];
-    if (!TFL_ORDER_HEADERS.every(function (header, index) { return actual[index] === header; })) {
+    const actual = sheet.getRange(1, 1, 1, TFL_ORDER_LEGACY_HEADERS.length).getDisplayValues()[0];
+    if (!TFL_ORDER_LEGACY_HEADERS.every(function (header, index) { return actual[index] === header; })) {
       fail_('SHEET_CONFIGURATION', 'Trang tính nhận đơn có cấu trúc khác. Cửa hàng cần kiểm tra.');
+    }
+    const extraStart = TFL_ORDER_LEGACY_HEADERS.length + 1;
+    const available = Math.min(TFL_ORDER_EXTRA_HEADERS.length,
+      sheet.getMaxColumns() - TFL_ORDER_LEGACY_HEADERS.length);
+    const existingHeaders = available > 0
+      ? sheet.getRange(1, extraStart, 1, available).getDisplayValues()[0] : [];
+    const missing = [];
+    TFL_ORDER_EXTRA_HEADERS.forEach(function (header, index) {
+      const current = existingHeaders[index] || '';
+      if (current && current !== header) {
+        fail_('SHEET_CONFIGURATION', 'Các cột bổ sung đang có dữ liệu khác. Cửa hàng cần kiểm tra.');
+      }
+      if (!current) missing.push(index);
+    });
+    // An unlabelled column can still contain existing data. Do not relabel it.
+    if (missing.length && available > 0 && sheet.getLastRow() > 1) {
+      const existingRows = sheet.getRange(2, extraStart, sheet.getLastRow() - 1, available).getValues();
+      if (existingRows.some(function (row) {
+        return missing.some(function (index) {
+          return index < available && row[index] !== '' && row[index] != null;
+        });
+      })) fail_('SHEET_CONFIGURATION', 'Các cột bổ sung đang có dữ liệu khác. Cửa hàng cần kiểm tra.');
+    }
+    if (missing.length) {
+      if (sheet.getMaxColumns() < TFL_ORDER_HEADERS.length) {
+        sheet.insertColumnsAfter(sheet.getMaxColumns(), TFL_ORDER_HEADERS.length - sheet.getMaxColumns());
+      }
+      sheet.getRange(1, extraStart, 1, TFL_ORDER_EXTRA_HEADERS.length)
+        .setValues([Array.from(TFL_ORDER_EXTRA_HEADERS)]);
     }
   }
   return sheet;

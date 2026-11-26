@@ -86,8 +86,25 @@
     "keys": ["code", "message", "retryable"],
     "retryableCodes": ["BUSY", "ORDER_SAVE_FAILED"]
   },
-  "worksheet": "Don_hang_Web_v2",
-  "worksheetPropertyOverride": "ORDER_SHEET_NAME_V2",
+  "worksheet": "Don_hang_Web",
+  "worksheetPropertyOverride": "ORDER_SHEET_NAME",
+  "worksheetCompatibility": {
+    "preservesSpreadsheetAndEndpoint": true,
+    "preservesExistingOrderRows": true,
+    "legacyColumnCount": 23,
+    "legacyColumns": [
+      "Thoi_gian_VN", "Ma_don", "Idempotency_key", "Payload_hash", "Trang_thai",
+      "San_pham", "SKU", "Dung_tich_ml", "So_luong", "Tien_san_pham",
+      "Phi_van_chuyen", "Tong_thanh_toan", "Tien_te", "Ho_va_ten",
+      "Dien_thoai", "Dia_chi", "Ghi_chu", "utm_source", "utm_medium",
+      "utm_campaign", "utm_content", "utm_term", "Nguon_website"
+    ],
+    "appendedColumns": [
+      "Phien_ban", "Ma_goi", "Chi_tiet_san_pham_JSON", "So_chai_trang",
+      "So_chai_do", "Tong_dung_tich_ml", "Gia_mua_le", "Giam_combo"
+    ],
+    "migration": "Validate exact legacy headers; append metadata headers only in unused columns; never overwrite existing order rows or custom columns"
+  },
   "allowedOrigins": [
     "https://thefragrancelabperfume.shop",
     "https://www.thefragrancelabperfume.shop",

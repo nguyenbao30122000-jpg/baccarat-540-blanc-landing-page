@@ -1,59 +1,53 @@
 (() => {
   'use strict';
-
   if (!document.body || document.body.dataset.page !== 'thank-you') return;
-  const $ = (id) => document.getElementById(id);
-  const expectedOffers = {
-    1: {subtotal: 549000, shipping: 30000, total: 579000},
-    2: {subtotal: 998000, shipping: 0, total: 998000}
-  };
-  const money = (value) => new Intl.NumberFormat('vi-VN').format(value) + 'đ';
-
-  function showUnavailable(state) {
-    document.body.dataset.receiptState = state;
-    $('confirmed-receipt').hidden = true;
-    $('empty-receipt').hidden = false;
-    if (state === 'unavailable') {
-      $('receipt-empty-description').textContent = 'Chưa thể hiển thị thông tin đơn hàng. Vui lòng kiểm tra trạng thái trước khi gửi lại.';
+  const byId = (id) => document.getElementById(id);
+  const setText = (id, text) => { const node = byId(id); if (node) node.textContent = text; };
+  const api = window.TFLReceipt;
+  let result = {state: 'unavailable', receipt: null};
+  try { if (api) result = api.read(window.sessionStorage); } catch (_) {}
+  document.body.dataset.receiptState = result.state;
+  if (result.state !== 'confirmed') {
+    if (result.state !== 'missing') {
+      setText('receipt-empty-description', 'Chưa thể hiển thị thông tin đơn hàng trong phiên này. Nếu vừa gửi yêu cầu, bạn vui lòng chờ cửa hàng xác nhận trước khi đặt lại.');
     }
-  }
-
-  let stored;
-  try {
-    stored = window.sessionStorage.getItem('tfl:last-confirmed-order');
-  } catch (_) {
-    showUnavailable('unavailable');
     return;
   }
-  if (!stored) { showUnavailable('missing'); return; }
-
-  let receipt;
-  try {
-    receipt = JSON.parse(stored);
-  } catch (_) {
-    showUnavailable('invalid');
-    return;
-  }
-
-  const expected = receipt && expectedOffers[receipt.quantity];
-  const confirmedAt = receipt && typeof receipt.confirmedAt === 'string' ? Date.parse(receipt.confirmedAt) : NaN;
-  const valid = receipt && typeof receipt === 'object' && !Array.isArray(receipt) &&
-    typeof receipt.orderId === 'string' && receipt.orderId.trim().length > 0 && receipt.orderId.length <= 120 &&
-    !/[\u0000-\u001f\u007f]/.test(receipt.orderId) &&
-    Number.isInteger(receipt.quantity) && expected && receipt.currency === 'VND' &&
-    receipt.subtotal === expected.subtotal && receipt.shipping === expected.shipping && receipt.total === expected.total &&
-    Number.isFinite(confirmedAt) && confirmedAt > 0 && confirmedAt <= Date.now() + 300000;
-  if (!valid) { showUnavailable('invalid'); return; }
-
-  $('receipt-quantity').textContent = receipt.quantity + ' chai × 50ml';
-  $('receipt-subtotal').textContent = money(receipt.subtotal);
-  $('receipt-shipping').textContent = receipt.shipping === 0 ? 'Miễn phí' : money(receipt.shipping);
-  $('receipt-total').textContent = money(receipt.total);
-  $('thank-title-tail').textContent = 'đã đặt hàng!';
-  $('thank-description').textContent = 'The Fragrance Lab đã nhận được đơn hàng của bạn. Cảm ơn bạn đã tin tưởng và lựa chọn sản phẩm!';
-  $('status-icon').setAttribute('d', 'm5 12 4 4L19 6');
-  $('receipt-status').textContent = 'Đặt hàng thành công';
-  $('empty-receipt').hidden = true;
-  $('confirmed-receipt').hidden = false;
-  document.body.dataset.receiptState = 'confirmed';
+  const receipt = result.receipt;
+  const offer = window.TFLApp.offers[receipt.offerId];
+  const money = window.TFLApp.money;
+  setText('receipt-order-id', receipt.orderId);
+  setText('receipt-date', new Intl.DateTimeFormat('vi-VN', {
+    dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Ho_Chi_Minh'
+  }).format(new Date(receipt.confirmedAt)));
+  setText('receipt-product-name', offer.name);
+  setText('receipt-quantity', receipt.quantity + ' chai · 50ml/chai');
+  setText('receipt-customer-name', receipt.customerName);
+  setText('receipt-phone', receipt.phone);
+  setText('receipt-address', receipt.address);
+  setText('receipt-note', receipt.note || 'Không có lời nhắn thêm.');
+  setText('receipt-subtotal', money(receipt.subtotal));
+  setText('receipt-shipping', receipt.shipping ? money(receipt.shipping) : 'Miễn phí');
+  setText('receipt-total', money(receipt.total));
+  const image = byId('receipt-product-image');
+  image.src = (window.TFL_ASSET_BASE || '') + offer.image;
+  image.alt = offer.name;
+  const items = byId('receipt-items');
+  items.replaceChildren();
+  receipt.items.forEach((item) => {
+    const row = document.createElement('li');
+    const description = document.createElement('div');
+    const name = document.createElement('strong');
+    const detail = document.createElement('span');
+    const amount = document.createElement('span');
+    name.textContent = api.productNames[item.sku];
+    detail.textContent = 'Số lượng: ' + item.quantity + ' chai · ' + item.volumeMl + 'ml';
+    amount.textContent = money(receipt.subtotal / receipt.quantity * item.quantity);
+    amount.className = 'receipt-item-amount';
+    description.append(name, detail);
+    row.append(description, amount);
+    items.append(row);
+  });
+  byId('empty-receipt').hidden = true;
+  byId('confirmed-receipt').hidden = false;
 })();
