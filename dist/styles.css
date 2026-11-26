@@ -77,3 +77,10 @@ body{font-synthesis:none}.bundle-option strong{font-size:.875rem}.bundle-option 
 .gift-price .previous-price{margin-bottom:1px}
 .hero-price .season-price-label{font-size:.64rem;letter-spacing:.11em}
 @media(max-width:760px){.offer-card .previous-price{margin-top:12px!important;margin-bottom:-9px!important}.season-price-label{font-size:.62rem}.bundle-option small{overflow-wrap:anywhere}}
+
+/* Regular-price comparison for one 50ml bottle (merchant-confirmed). */
+.hero-price .hero-original-price{display:block;font-size:.9rem;line-height:1.4;color:#7b6652;letter-spacing:0}
+.hero-original-price del{color:#836b57;text-decoration:line-through;text-decoration-color:#9a5d4d;text-decoration-thickness:2px;font-weight:500;font-size:1.08rem}
+.offer-card:not(.featured) .previous-price{margin-top:16px!important;margin-bottom:-14px!important}
+@media(max-width:1000px){.hero-price{flex-wrap:wrap}.hero-price .hero-original-price{flex-basis:100%;order:1}.hero-price strong{order:2}.hero-price>span:last-child{order:3}}
+@media(max-width:760px){.hero-price{display:flex;flex-wrap:wrap;align-items:baseline;gap:7px 10px}.hero-price .season-price-label{order:0;flex-basis:auto}.hero-price .hero-original-price{order:1;flex-basis:100%;font-size:.85rem}.hero-price strong{order:2}.hero-price>span:last-child{order:3}.offer-card:not(.featured) .previous-price{margin-top:12px!important;margin-bottom:-9px!important}}
