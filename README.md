@@ -49,7 +49,7 @@ Mức tiết kiệm trình bày theo giá niêm yết: 3.446.000đ cho một cha
 - **Ruby — Hồng ngọc quyền lực:** tên trưng bày của phiên bản Đỏ.
 - **Pearl — Ngọc trai tinh tế:** tên trưng bày của phiên bản Trắng.
 - Tên mới được đồng bộ trong HTML, catalog, tóm tắt đặt hàng, biên nhận và mã nguồn receiver v2. Mã `white` / `red` / `duo`, SKU, giá, phí giao hàng và các cột Google Sheet giữ nguyên; dữ liệu đơn cũ không bị đổi tên.
-- Ảnh Open Graph và Twitter dùng `dist/assets/social-ruby-pearl-20261126-v1.jpg`, JPEG RGB 1536 × 1024, URL mới để tránh cache ảnh cũ. Metadata khai báo kích thước, định dạng, mô tả ảnh và tên cửa hàng ngay trong HTML tĩnh.
+- Ảnh Open Graph và Twitter dùng `dist/assets/social-ruby-pearl-20261126-v2.jpg`, JPEG RGB 1724 × 912, được tạo riêng cho chia sẻ: hai chai ở giữa trên nền ngà/lụa đỏ, tên Pearl và Ruby nằm ngay dưới từng chai. URL ảnh mới để các nền tảng lấy đúng phiên bản sau khi đọc lại trang. Metadata khai báo kích thước, định dạng, mô tả ảnh và tên cửa hàng ngay trong HTML tĩnh.
 - Link chia sẻ mới: `https://thefragrancelabperfume.shop/ruby-pearl/`. Đây là storefront đầy đủ được sinh từ cùng nguồn với trang chủ, có `og:url` và canonical riêng; trang cảm ơn tương ứng ở `/ruby-pearl/cam-on.html`. Không đưa dữ liệu khách hàng vào URL.
 - Cache thẻ chia sẻ thuộc ứng dụng bên ngoài. Thay metadata không tự cập nhật thẻ đã tạo trước đó. Dùng link bộ sưu tập mới cho một thẻ mới; nếu cần làm mới URL gốc trên Facebook, dùng Sharing Debugger và thao tác Scrape Again trong tài khoản phù hợp.
 - Nguồn triển khai: https://ogp.me/ và https://developers.facebook.com/documentation/sharing/webmasters/images . Nguồn ảnh và cách xuất ảnh chia sẻ lưu tại `design/social-ruby-pearl-prompt.txt`.

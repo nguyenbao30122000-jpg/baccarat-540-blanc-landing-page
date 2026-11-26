@@ -1,10 +1,12 @@
-Social sharing asset · 2026-11-26
-Asset: dist/assets/social-ruby-pearl-20261126-v1.jpg
-Source: dist/assets/tet-hero.webp, the approved duo artwork generated with built-in ImageGen.
-Source generation brief: design/tet-product-prompts.txt
-Output: JPEG RGB, 1536 × 1024 pixels.
+Built-in ImageGen · 2026-11-26
+Asset: dist/assets/social-ruby-pearl-20261126-v2.jpg
+Reference: dist/assets/tet-hero.webp
+Generated source: PNG RGB, 1724 × 912 pixels.
+Published output: JPEG RGB, 1724 × 912 pixels.
 
-The deployment export preserves the approved Pearl (clear glass) and Ruby (red glass) bottle composition. The artwork is encoded as JPEG for social-card compatibility; its pixels are not cropped, stretched or overlaid with new product labels. The Ruby/Pearl edition names are supplied in the accompanying static Open Graph and Twitter metadata.
+Prompt:
+Create a luxury landscape perfume sharing card from the exact reference bottles, with clear Pearl left and red Ruby right, both whole and centered for thumbnail crops; ivory/champagne stone and ruby silk, restrained gold light, accurate original bottle labels, exact added typography “THE FRAGRANCE LAB”, “PEARL”, “RUBY”; no prices, people, hearts, love theme, or extra copy.
 
-Export settings: Pillow JPEG encoder, quality 90, optimize true, subsampling 0.
-Export performed in the isolated work/ruby-pearl-share-image-20261126 GitHub Actions branch after the local executor became unavailable. The conversion job has no repository token permissions; it reads the pinned public source image and emits the image for the final reviewed commit.
+The original generated artwork was recovered after the local executor became available again. This dedicated sharing composition replaces the temporary v1 export of the existing hero. The two edition names are visible below the corresponding bottles. No pixels are cropped, stretched or relabeled during export.
+
+Export settings: Pillow JPEG encoder, quality 92, optimize true, subsampling 0. The new v2 filename avoids reusing the prior image URL. The original v1 image remains available for previously cached cards.
