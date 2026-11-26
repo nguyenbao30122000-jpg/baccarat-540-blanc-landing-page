@@ -14,7 +14,7 @@
     $('confirmed-receipt').hidden = true;
     $('empty-receipt').hidden = false;
     if (state === 'unavailable') {
-      $('receipt-empty-description').textContent = 'Chưa thể hiển thị thông tin xác nhận trên trình duyệt này. Điều này không có nghĩa là yêu cầu đặt hàng của bạn bị lỗi.';
+      $('receipt-empty-description').textContent = 'Chưa thể hiển thị thông tin đơn hàng. Vui lòng kiểm tra trạng thái trước khi gửi lại.';
     }
   }
 
@@ -49,10 +49,10 @@
   $('receipt-subtotal').textContent = money(receipt.subtotal);
   $('receipt-shipping').textContent = receipt.shipping === 0 ? 'Miễn phí' : money(receipt.shipping);
   $('receipt-total').textContent = money(receipt.total);
-  $('thank-title-tail').textContent = 'đã chọn 540 Blanc.';
-  $('thank-description').textContent = 'Cảm ơn bạn đã dành sự tin tưởng cho The Fragrance Lab. Yêu cầu đặt hàng của bạn đã được ghi nhận. Một dấu ấn mới bắt đầu từ lựa chọn rất riêng này.';
+  $('thank-title-tail').textContent = 'đã đặt hàng!';
+  $('thank-description').textContent = 'The Fragrance Lab đã nhận được đơn hàng của bạn. Cảm ơn bạn đã tin tưởng và lựa chọn sản phẩm!';
   $('status-icon').setAttribute('d', 'm5 12 4 4L19 6');
-  $('receipt-status').textContent = 'Đã nhận yêu cầu đặt hàng';
+  $('receipt-status').textContent = 'Đặt hàng thành công';
   $('empty-receipt').hidden = true;
   $('confirmed-receipt').hidden = false;
   document.body.dataset.receiptState = 'confirmed';

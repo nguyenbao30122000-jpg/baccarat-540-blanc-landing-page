@@ -12,7 +12,7 @@
   let currentBundle = '1';
   let currentOrder = null;
   let sending = false;
-  const closedMessage = 'Đặt hàng trực tuyến đang tạm đóng. Thông tin của bạn chưa được gửi.';
+  const closedMessage = 'Cửa hàng hiện chưa nhận đơn trực tuyến.';
   function orderApiReady() {
     return !!window.TFLOrders && typeof window.TFLOrders.submit === 'function' &&
       typeof window.TFLOrders.randomId === 'function';
@@ -39,7 +39,7 @@
     $('.submit-order').style.cursor = available ? '' : 'not-allowed';
     $('#submit-label').textContent = available ? 'Đặt hàng ngay' : 'Đặt hàng tạm đóng';
     $('#form-mode-notice').textContent = available
-      ? (stagingTest ? 'CHẾ ĐỘ KIỂM THỬ: Chỉ nhập dữ liệu giả lập. Không gửi thông tin khách thật trước khi cửa hàng mở nhận đơn.' : 'Thông tin bạn cung cấp được dùng để xử lý yêu cầu đặt hàng.')
+      ? (stagingTest ? 'Đơn kiểm thử — không nhập thông tin khách hàng.' : 'Thông tin được sử dụng để xử lý đơn hàng.')
       : closedMessage;
   }
   function blockUnavailableCheckout() {
@@ -150,7 +150,7 @@
     const status = $('.form-status');
     button.disabled = true;
     label.textContent = 'Đang gửi đơn hàng…';
-    status.textContent = 'Đang gửi thông tin tới cửa hàng. Vui lòng không đóng trang.';
+    status.textContent = 'Đang gửi đơn hàng, vui lòng không đóng trang.';
     try {
       const query = new URLSearchParams(window.location.search);
       const attribution = {};
@@ -198,10 +198,10 @@
         }
       }));
       if (receiptSaved) setTimeout(showThankYou, 1200);
-      else status.textContent = 'Cửa hàng đã nhận được đơn. Trình duyệt đang chặn lưu xác nhận, bạn không cần gửi lại.';
+      else status.textContent = 'Cửa hàng đã nhận đơn hàng của bạn. Bạn không cần gửi lại.';
     } catch (error) {
       status.textContent = ['AbortError', 'TimeoutError'].includes(error.name)
-        ? 'Chưa xác nhận được trạng thái đơn. Bạn có thể bấm thử lại; hệ thống giữ nguyên mã yêu cầu để tránh đơn trùng.'
+        ? 'Chưa xác nhận được đơn hàng. Bạn có thể thử gửi lại.'
         : 'Chưa gửi được đơn hàng. Thông tin vẫn được giữ để bạn thử lại.';
       label.textContent = 'Thử gửi đơn hàng';
       button.disabled = false;
