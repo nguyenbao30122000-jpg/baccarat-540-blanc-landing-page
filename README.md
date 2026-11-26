@@ -85,3 +85,7 @@ Repository này chứa mã nguồn độc lập và các ảnh gốc hiện có 
 Bản `dist/index.html` vẫn hoạt động độc lập để triển khai toàn bộ thư mục `dist` lên hosting khác. Khi sửa nội dung HTML, cập nhật đồng bộ `dist/index.html` và `index.html` ở gốc; bản ở gốc thêm tiền tố `dist/` vào các đường dẫn tài nguyên, còn anchor nội bộ giữ nguyên. Các file CSS, JavaScript, ảnh và font chỉ có một bản trong `dist/`.
 
 Cấu hình định danh riêng của bản xem duyệt trên Sites không nằm trong repository. Thẻ `og:image` ở cả hai trang đã dùng URL GitHub Pages; cần cập nhật theo tên miền mới nếu triển khai ở một nơi khác.
+
+## Checkout streamlined
+
+The order form now submits directly without a review modal; the thank-you page does not display order IDs or timestamps. Order identifiers remain available internally for reconciliation and idempotency.
