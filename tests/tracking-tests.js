@@ -102,7 +102,7 @@ check(() => {
     assert.equal(event.quantity, event.items.reduce((sum, item) => sum + item.quantity, 0));
   }
   assert.deepEqual(events[2].items.map((item) => [item.price, item.discount, item.quantity]),
-    [[499000, 50000, 1], [499000, 50000, 1]]);
+    [[499000, 3496000, 1], [499000, 3496000, 1]]);
   assert.equal(page.meta('SelectOffer')[2].num_items, 2);
   assertNoCustomerData(page);
 });

@@ -1,0 +1,79 @@
+TFL Vietnamese typography revision — 26 November 2026
+
+Heading family: TFL Editorial (CSS alias for Noto Serif).
+Body family: Be Vietnam Pro, preserving its appearance and replacing split subsets
+with complete local faces at weights 400/500/600/700.
+
+New heading assets:
+- dist/assets/fonts/noto-serif-regular.woff2 — 151,052 bytes
+- dist/assets/fonts/noto-serif-italic.woff2 — 187,076 bytes
+- dist/assets/fonts/NotoSerif-OFL.txt — complete original SIL Open Font License 1.1
+
+Primary upstream sources:
+https://github.com/google/fonts/tree/main/ofl/notoserif
+https://raw.githubusercontent.com/google/fonts/main/ofl/notoserif/NotoSerif%5Bwdth%2Cwght%5D.ttf
+https://raw.githubusercontent.com/google/fonts/main/ofl/notoserif/NotoSerif-Italic%5Bwdth%2Cwght%5D.ttf
+https://raw.githubusercontent.com/google/fonts/main/ofl/notoserif/OFL.txt
+
+Preparation:
+Downloaded the matching normal and real italic variable font files from Google Fonts.
+Fixed width (wdth) at its original normal 100% value. Kept the weight axis 100–900,
+default 400. Subset each complete face to Latin, Latin Extended, Vietnamese,
+combining accents, common punctuation/currency and symbols, retaining shaping
+features. Encoded to WOFF2. Each style has a single file containing both Latin and
+Vietnamese, so the Vietnamese diacritics do not switch to a separate face.
+
+Verification:
+Both output faces were reopened with fontTools. All U+1EA0–U+1EF9 characters,
+Ă/ă, Đ/đ, Ĩ/ĩ, Ũ/ũ, Ơ/ơ, Ư/ư, and the Vietnamese combining accents are present.
+The sample below is fully supported in both composed NFC and decomposed NFD form.
+Regular contains 1,122 cmap entries; italic contains 1,121. The italic angle is
+-12 degrees in the actual font; regular is 0. Only the weight variation axis remains.
+
+Sample:
+Mùi hương đi qua. Cảm xúc ở lại. Tết này, trao một lời thương. Trắng & Đỏ — Ưu đãi Tết
+3.995.000đ 549.000đ 7.990.000đ 998.000đ. Đẹp theo cách của bạn. Một dấu ấn riêng.
+
+Original source SHA-256:
+Normal: 4d8e6761424656867019081a1a01336f3cb086982682698714054fc33f782713
+Italic: e87acbc6c0efd0d9a20d6a8cbbda2b266c14be3a3a6f5af8ec9d7b2460570ad1
+
+Output WOFF2 SHA-256:
+Normal: 970028ef45e13c3b010a25821eb442886a294f50862c51c03f2bc9cd57f84b08
+Italic: 6bfc6aa110ed34d60d563053a56f1245c8274df1f0ad684a615bf81d0f85abad
+
+Observed prior setup:
+The Cormorant Garamond Latin and Vietnamese files were matching upright variable
+fonts (weight 300–700, italic angle 0). The website's italic emphasis therefore
+relied on browser synthesis. File metadata does not by itself prove why every
+diacritic appeared wrong in the supplied screenshot. The replacement removes this
+synthetic style, uses complete Vietnamese coverage within each face, and fixes the
+font width. The page should also use comfortable line height and no text scaling.
+
+Body font completion:
+The prior split Be Vietnam Pro subsets covered composed NFC Vietnamese, but omitted
+the decomposed circumflex, breve and horn marks U+0302/U+0306/U+031B. The official
+full font files contain these glyphs. Downloaded and WOFF2-encoded each complete
+file, without glyph subsetting or shape modifications. All four contain 459 cmap
+entries and cover the complete Vietnamese test above in both NFC and NFD form.
+
+Primary sources:
+https://raw.githubusercontent.com/google/fonts/main/ofl/bevietnampro/METADATA.pb
+https://raw.githubusercontent.com/google/fonts/main/ofl/bevietnampro/BeVietnamPro-Regular.ttf
+https://raw.githubusercontent.com/google/fonts/main/ofl/bevietnampro/BeVietnamPro-Medium.ttf
+https://raw.githubusercontent.com/google/fonts/main/ofl/bevietnampro/BeVietnamPro-SemiBold.ttf
+https://raw.githubusercontent.com/google/fonts/main/ofl/bevietnampro/BeVietnamPro-Bold.ttf
+https://raw.githubusercontent.com/google/fonts/main/ofl/bevietnampro/OFL.txt
+
+Output files:
+dist/assets/fonts/be-vietnam-pro-400-full.woff2 — 38,136 bytes
+dist/assets/fonts/be-vietnam-pro-500-full.woff2 — 40,384 bytes
+dist/assets/fonts/be-vietnam-pro-600-full.woff2 — 40,396 bytes
+dist/assets/fonts/be-vietnam-pro-700-full.woff2 — 41,204 bytes
+dist/assets/fonts/BeVietnamPro-OFL.txt — complete original license
+
+Output SHA-256:
+400: 500a6fadd26062d975b06726166c8de80e2bd96f409137a042abc0e2cd307388
+500: 805312afcae9fae3b1903bd736ab5ab0b110fbce77747a7deb1e93a62641125d
+600: bbc6f2504419ed95d7566cfe31583fb25010cd679c6368ee3b217b8d346988df
+700: db1d3a4c437c08a482c3943df07a3b5859830c8aac1bf9d0ccf3260ceee3c78b

@@ -8,13 +8,13 @@
   });
   const OFFERS = Object.freeze({
     white: freezeOffer({id: 'white', name: 'Baccarat 540 Trắng', spec: '01 chai Trắng · 50ml',
-      image: 'assets/white.webp', quantity: 1, subtotal: 549000, shipping: 30000, total: 579000, savings: 0,
+      image: 'assets/order-white.webp', quantity: 1, listPrice: 3995000, subtotal: 549000, shipping: 30000, total: 579000, savings: 3446000,
       items: [{sku: 'TFL-540-BLANC-50', volumeMl: 50, quantity: 1}]}),
     red: freezeOffer({id: 'red', name: 'Baccarat 540 Đỏ', spec: '01 chai Đỏ · 50ml',
-      image: 'assets/red.webp', quantity: 1, subtotal: 549000, shipping: 30000, total: 579000, savings: 0,
+      image: 'assets/order-red.webp', quantity: 1, listPrice: 3995000, subtotal: 549000, shipping: 30000, total: 579000, savings: 3446000,
       items: [{sku: 'TFL-540-ROUGE-50', volumeMl: 50, quantity: 1}]}),
     duo: freezeOffer({id: 'duo', name: 'Bộ đôi Trắng + Đỏ', spec: '01 Trắng + 01 Đỏ · 2 × 50ml',
-      image: 'assets/duo.webp', quantity: 2, subtotal: 998000, shipping: 0, total: 998000, savings: 100000,
+      image: 'assets/order-duo.webp', quantity: 2, listPrice: 7990000, subtotal: 998000, shipping: 0, total: 998000, savings: 6992000,
       items: [{sku: 'TFL-540-BLANC-50', volumeMl: 50, quantity: 1},
         {sku: 'TFL-540-ROUGE-50', volumeMl: 50, quantity: 1}]})
   });
@@ -141,13 +141,14 @@
       setText('order-name', offer.name);
       setText('order-spec', offer.spec);
       setText('order-price', money(offer.subtotal));
+      setText('order-list-price', money(offer.listPrice));
       setText('order-shipping', offer.shipping ? money(offer.shipping) : 'Miễn phí');
       setText('order-total', money(offer.total));
       setText('sticky-name', offer.name);
       setText('sticky-price', money(offer.total));
       const savings = byId('order-savings');
       if (savings) {
-        savings.textContent = offer.savings ? 'Tiết kiệm ' + money(offer.savings) + ' so với mua lẻ' : '';
+        savings.textContent = offer.savings ? 'Ưu đãi Tết: tiết kiệm ' + money(offer.savings) + ' so với giá niêm yết' : '';
         savings.hidden = !offer.savings;
       }
       const image = byId('order-image');

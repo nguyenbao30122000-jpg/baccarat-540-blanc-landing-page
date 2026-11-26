@@ -130,7 +130,7 @@
     return {currency: 'VND', value: offer.subtotal, offer_id: offer.id, quantity: offer.quantity,
       items: offer.items.map((item) => ({item_id: item.sku, item_name: productNames[item.sku],
         item_brand: 'The Fragrance Lab', item_category: 'Nước hoa', item_variant: '50ml',
-        price: unitPrice, discount: Math.max(0, 549000 - unitPrice), quantity: item.quantity}))};
+        price: unitPrice, discount: Math.max(0, offer.listPrice / offer.quantity - unitPrice), quantity: item.quantity}))};
   }
 
   function pixelParameters(offer) {

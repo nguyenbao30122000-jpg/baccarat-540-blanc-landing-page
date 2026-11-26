@@ -1,6 +1,6 @@
-# The Fragrance Lab — Bộ đôi Baccarat 540
+# The Fragrance Lab — Tết trao hương, gửi yêu thương
 
-Bản thiết kế storefront tiếng Việt cho hai phiên bản Baccarat 540 Trắng và Đỏ, cùng lựa chọn combo Trắng + Đỏ. HTML/CSS/JavaScript thuần, không có bước cài đặt hay build.
+Storefront tiếng Việt cho hai phiên bản Baccarat 540 Trắng và Đỏ, cùng lựa chọn combo Trắng + Đỏ. Bản mùa Tết bổ sung ảnh riêng cho từng khu vực, câu chuyện và hình ảnh nam nữ, giá niêm yết gạch ngang và bộ font tiếng Việt hoàn chỉnh. HTML/CSS/JavaScript thuần, không có bước cài đặt hay build.
 
 ## Trạng thái
 
@@ -12,13 +12,15 @@ Bản thiết kế storefront tiếng Việt cho hai phiên bản Baccarat 540 T
 
 ## Ba lựa chọn
 
-| Lựa chọn | Sản phẩm | Tiền sản phẩm | Vận chuyển | Tổng |
-| --- | --- | ---: | ---: | ---: |
-| `white` | 01 Baccarat 540 Trắng, 50ml | 549.000đ | 30.000đ | 579.000đ |
-| `red` | 01 Baccarat 540 Đỏ, 50ml | 549.000đ | 30.000đ | 579.000đ |
-| `duo` | 01 Trắng + 01 Đỏ, 50ml/chai | 998.000đ | 0đ | 998.000đ |
+| Lựa chọn | Sản phẩm | Giá niêm yết | Giá Tết | Vận chuyển | Tổng thanh toán |
+| --- | --- | ---: | ---: | ---: | ---: |
+| `white` | 01 Baccarat 540 Trắng, 50ml | 3.995.000đ | 549.000đ | 30.000đ | 579.000đ |
+| `red` | 01 Baccarat 540 Đỏ, 50ml | 3.995.000đ | 549.000đ | 30.000đ | 579.000đ |
+| `duo` | 01 Trắng + 01 Đỏ, 50ml/chai | 7.990.000đ | 998.000đ | 0đ | 998.000đ |
 
-Giá combo phối hai phiên bản là đề xuất áp dụng từ ưu đãi hai chai đang có. Hai trang nguồn chỉ ghi combo cùng loại, nên cần chủ cửa hàng xác nhận trước khi mở đơn thật. Tiết kiệm 100.000đ là tiền sản phẩm so với 549.000đ × 2; miễn phí vận chuyển trình bày riêng.
+Giá gạch ngang được khôi phục theo yêu cầu trực tiếp của chủ cửa hàng và đúng bản gốc: `index.html` tại commit `550a824` ghi Trắng 3.995.000đ/chai, 7.990.000đ/hai chai; trang `https://www.thefragrancelab.io.vn/sale` ghi Đỏ “3.995.000 >> 549.000/đ 1 chai”, đã đối chiếu lại bằng HTTP 200 ngày 26/11/2026. Giá niêm yết combo Trắng + Đỏ bằng tổng hai giá niêm yết đơn.
+
+Mức tiết kiệm trình bày theo giá niêm yết: 3.446.000đ cho một chai, 6.992.000đ cho combo. Không dùng 1.098.000đ làm giá gạch ngang của combo. Miễn phí vận chuyển được trình bày riêng. Giá bán 549.000đ/998.000đ, phí ship và payload nhận đơn vẫn giữ nguyên; `listPrice` và `savings` chỉ bổ sung cho giao diện và sự kiện danh mục.
 
 ## Cấu trúc
 
@@ -36,6 +38,8 @@ Giá combo phối hai phiên bản là đề xuất áp dụng từ ưu đãi ha
 - `review.html` và `dist/review.html`: xem giao diện ở các kích thước; không phát tracking trong iframe.
 - `cam-on.html` và `dist/cam-on.html`: đường dẫn cũ được giữ tương thích, dẫn về bộ sưu tập và không tự xác nhận đơn hàng.
 - `design/asset-prompts.txt`: prompt và nguồn tham chiếu của các ảnh ImageGen.
+- `design/tet-product-prompts.txt`, `design/tet-lifestyle-prompts.txt`: prompt, tham chiếu và cách dùng bộ ảnh mới mùa Tết.
+- `design/font-notes.txt`: nguồn chính thức, giấy phép, cách chuẩn bị và kiểm tra bộ font tiếng Việt mới.
 
 ## Kiểm tra
 
@@ -49,19 +53,25 @@ node tests/tracking-tests.js
 node integrations/google-apps-script/receiver-test.js
 ```
 
-68 kiểm tra ngoại tuyến đã đạt: 44 cho frontend, 9 tình huống tracking và 15 cho receiver. Đã duyệt trong trình duyệt ở kích thước desktop và các khung nội dung điện thoại 375px/345px; không tràn ngang. Đã thử chuyển ba gói, menu điện thoại, lỗi form và modal kiểm tra đơn ở chế độ preview. Kiểm tra này không thay thế thử nghiệm triển khai Google thật.
+Bộ kiểm tra gồm 75 kiểm tra ngoại tuyến: 51 cho frontend, 9 tình huống tracking và 15 cho receiver. Kiểm tra frontend bổ sung giá niêm yết, số tiền giảm và ba ảnh đặt hàng riêng, đồng thời giữ các kiểm tra hợp đồng payload/health/ACK. Các lệnh trên không gửi đơn thật hoặc gọi dịch vụ analytics.
+
+Khi duyệt giao diện cần kiểm tra desktop và khung điện thoại 375px/345px: không tràn ngang, chữ có dấu và chữ nghiêng hiển thị đúng, ảnh không cắt sai chủ thể, ba lựa chọn đổi đúng ảnh/giá niêm yết/giá Tết/phí ship, menu và modal preview hoạt động. Kiểm tra ngoại tuyến và giao diện không thay thế thử nghiệm triển khai Google thật.
 
 ## Thiết kế và nội dung
 
-Hệ màu kem sáng, đỏ rượu và vàng champagne. Cormorant Garamond cho tiêu đề; Be Vietnam Pro cho nội dung. Sản phẩm được đưa lên đầu màn hình điện thoại. Nút chọn từ mọi phần đồng bộ một lựa chọn và một tổng tiền.
+Hệ màu kem sáng, đỏ rượu và vàng champagne. Chủ đề “Tết trao hương, gửi yêu thương” xuyên suốt thông báo đầu trang, mở đầu, bộ sưu tập, câu chuyện gặp gỡ, hai phần cho nàng/chàng, ưu đãi quà Tết và chọn mua. Những câu nói là nội dung thương hiệu, không gắn với khách hàng hoặc giả làm lời chứng thực. Không dùng số lượng đã bán, tồn kho hay đồng hồ đếm ngược chưa có dữ liệu.
 
-Copy xoay quanh “Hai sắc thái. Một dấu ấn riêng.”, tiến từ bộ sưu tập đến câu chuyện, combo, tư vấn lựa chọn và đặt hàng. Giá combo nổi bật bằng so sánh giá mua lẻ thực tế. Không dùng đánh giá khách hàng, số lượng đã bán, tồn kho, đồng hồ đếm ngược hoặc chứng nhận xuất xứ chưa có bằng chứng.
+Noto Serif (tên CSS `TFL Editorial`) thay font tiêu đề cũ, có cả kiểu thường và kiểu nghiêng thật. Trục chiều rộng đã cố định 100%; chỉ trục độ đậm thay đổi. Nội dung dùng Be Vietnam Pro 400/500/600/700 với bản đầy đủ thay cho các tệp chia nhỏ theo bộ ký tự. Cả sáu font cục bộ đã kiểm tra đủ chữ Việt dạng NFC và NFD, gồm dấu mũ, dấu râu và dấu trăng. CSS tắt kiểu chữ tổng hợp bằng `font-synthesis: none`; nội dung HTML chuẩn hóa NFC; giãn dòng tiêu đề khoảng 1,28–1,5, nội dung thường 1,9–2. Không dùng biến đổi co kéo chữ.
+
+Sản phẩm được đưa lên đầu màn hình điện thoại; thanh chọn mua cố định cập nhật theo lựa chọn. Nút chọn từ mọi phần đồng bộ cùng một gói, ảnh đặt hàng, giá gạch ngang và tổng tiền. Đường dẫn CSS/JS có hash nội dung để tránh trộn giao diện mới với tài nguyên cũ trong cache.
 
 ## Hình ảnh và thông tin cần chốt
 
 - Trắng dùng hình chai trong Eau de Parfum, nhãn đỏ theo ảnh người dùng đính kèm. Điều này thay cho ảnh TFL/540 BLANC nhãn trắng được tạo trong web cũ.
 - Đỏ dùng hình chai thủy tinh đỏ, nhãn vàng Extrait de Parfum theo ảnh trên trang `/sale`.
-- Các ảnh mới là ảnh phối cảnh ImageGen, không phải ảnh chụp hàng tồn thực tế. Cùng một ảnh mỗi SKU được dùng nhất quán ở thẻ sản phẩm và tóm tắt đơn.
+- Bộ ảnh mùa Tết gồm chín ảnh mới: ảnh mở đầu dọc, ảnh bộ đôi ngang dùng cho chia sẻ (OG), phối cảnh quà Tết, ba ảnh Trắng/Đỏ/combo riêng ở phần chọn mua, người nữ, người nam và cặp đôi trong câu chuyện. Hai ảnh danh mục Trắng/Đỏ đã tạo trước được giữ cho đúng vị trí thẻ sản phẩm. Các khu vực nội dung chính không lặp lại cùng một ảnh.
+- Hình ảnh được tạo bằng ImageGen theo tham chiếu, không phải ảnh chụp hàng tồn hoặc khách hàng thực tế. Mẫu chai vẫn nhất quán dù bối cảnh và bố cục khác nhau. Các ảnh phong cách có người trưởng thành và không mô phỏng người nổi tiếng.
+- Hộp quà, hoa và phụ kiện phối cảnh không thuộc combo; nội dung tại phần ưu đãi và FAQ nói rõ điều này.
 - Trang `/sale` có tiêu đề và ảnh ghi 70ml nhưng form ghi 50ml. Bản này tạm dùng 50ml theo form, cần chủ cửa hàng chốt dung tích giao thực tế.
 - Chưa xác minh hãng/nguồn gốc hàng; website không tự thêm cam kết “chính hãng” hay thời gian lưu hương cố định.
 - Hotline 0358885789 xuất hiện trong popup cảm ơn của trang `/sale`; không tự gắn nhãn Zalo khi chưa xác nhận tài khoản.
@@ -80,7 +90,7 @@ Lệnh này gắn phiên bản theo SHA-256 của CSS/JS và đồng bộ hai tr
 
 Giữ `CNAME` là `thefragrancelabperfume.shop` và `.nojekyll`. Không có bước build hay dependency bên ngoài. Ảnh OG và canonical trỏ về tên miền thật; `noindex,nofollow` được giữ theo cấu hình trước đó trong khi thông tin sản phẩm và nhận đơn trực tuyến còn chờ chốt.
 
-Trước khi mở nhận đơn: xác nhận combo, dung tích và hình chai thực tế; triển khai Apps Script v2 theo hướng dẫn trong `integrations/google-apps-script`; kiểm tra health v2 và đường lưu/ACK; cập nhật endpoint khi cần rồi đổi `mode` sang `live`. GitHub Pages chỉ cập nhật mã nguồn, không tự triển khai Apps Script. Chế độ live tự chặn receiver v1 hoặc giá không khớp.
+Trước khi mở nhận đơn: xác nhận dung tích và hình chai giao thực tế; triển khai Apps Script v2 theo hướng dẫn trong `integrations/google-apps-script`; kiểm tra health v2 và đường lưu/ACK; cập nhật endpoint khi cần rồi đổi `mode` sang `live`. GitHub Pages chỉ cập nhật mã nguồn, không tự triển khai Apps Script. Chế độ live tự chặn receiver v1 hoặc giá không khớp. Bản cập nhật mùa Tết không sửa receiver hoặc bật nhận đơn.
 
 Form hiện ở preview, không tạo đơn; đã có liên kết gọi 0358885789 ngay dưới nút kiểm tra lựa chọn để khách liên hệ cửa hàng. Không thay thành `live` chỉ vì giao diện đã lên tên miền.
 

@@ -30,6 +30,11 @@ for (const [id, expectedTotal] of [['white', 579000], ['red', 579000], ['duo', 9
   check(() => assert.equal(app.validateAck({...ack, offerId: 'legacy'}, payload), false));
 }
 const combo = app.buildPayload('duo', customer, '304e130a-5a09-4f93-8ce0-019ea054f9f0');
+for (const [id, listPrice] of [['white', 3995000], ['red', 3995000], ['duo', 7990000]]) {
+  check(() => assert.equal(app.offers[id].listPrice, listPrice));
+  check(() => assert.equal(app.offers[id].savings, listPrice - app.offers[id].subtotal));
+}
+check(() => assert.equal(new Set(Object.values(app.offers).map((offer) => offer.image)).size, 3));
 check(() => assert.deepEqual(combo.items.map((item) => item.sku), ['TFL-540-BLANC-50','TFL-540-ROUGE-50']));
 check(() => assert.equal(app.offers.white.subtotal + app.offers.red.subtotal - app.offers.duo.subtotal, 100000));
 check(() => assert.throws(() => app.buildPayload('legacy', customer, 'test')));
