@@ -70,11 +70,13 @@ Copy xoay quanh “Hai sắc thái. Một dấu ấn riêng.”, tiến từ b�
 
 Repository: `https://github.com/nguyenbao30122000-jpg/baccarat-540-blanc-landing-page`
 
-GitHub Pages phục vụ nhánh `main`, thư mục gốc. Sau khi sửa `dist/index.html`, chạy:
+GitHub Pages phục vụ nhánh `main`, thư mục gốc. Sau khi sửa HTML, CSS hoặc JavaScript, chạy:
 
 ```sh
 node scripts/sync-pages.mjs
 ```
+
+Lệnh này gắn phiên bản theo SHA-256 của CSS/JS và đồng bộ hai trang chủ. Nhờ đó, người từng mở bản cũ không nhận HTML mới ghép với CSS hoặc JavaScript còn lưu trong cache. Chạy lại không làm đổi phiên bản nếu nội dung tài nguyên giữ nguyên.
 
 Giữ `CNAME` là `thefragrancelabperfume.shop` và `.nojekyll`. Không có bước build hay dependency bên ngoài. Ảnh OG và canonical trỏ về tên miền thật; `noindex,nofollow` được giữ theo cấu hình trước đó trong khi thông tin sản phẩm và nhận đơn trực tuyến còn chờ chốt.
 
