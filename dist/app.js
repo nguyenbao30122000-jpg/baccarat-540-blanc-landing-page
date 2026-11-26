@@ -7,13 +7,13 @@
     items: Object.freeze(offer.items.map((item) => Object.freeze(item)))
   });
   const OFFERS = Object.freeze({
-    white: freezeOffer({id: 'white', name: 'Baccarat 540 Trắng', spec: '01 chai Trắng · 50ml',
+    white: freezeOffer({id: 'white', name: 'Baccarat 540 Pearl (Trắng)', spec: '01 chai Pearl · Trắng · 50ml',
       image: 'assets/order-white.webp', quantity: 1, listPrice: 3995000, subtotal: 549000, shipping: 30000, total: 579000, savings: 3446000,
       items: [{sku: 'TFL-540-BLANC-50', volumeMl: 50, quantity: 1}]}),
-    red: freezeOffer({id: 'red', name: 'Baccarat 540 Đỏ', spec: '01 chai Đỏ · 50ml',
+    red: freezeOffer({id: 'red', name: 'Baccarat 540 Ruby (Đỏ)', spec: '01 chai Ruby · Đỏ · 50ml',
       image: 'assets/order-red.webp', quantity: 1, listPrice: 3995000, subtotal: 549000, shipping: 30000, total: 579000, savings: 3446000,
       items: [{sku: 'TFL-540-ROUGE-50', volumeMl: 50, quantity: 1}]}),
-    duo: freezeOffer({id: 'duo', name: 'Bộ đôi Trắng + Đỏ', spec: '01 Trắng + 01 Đỏ · 2 × 50ml',
+    duo: freezeOffer({id: 'duo', name: 'Bộ đôi Pearl + Ruby', spec: '01 Pearl (Trắng) + 01 Ruby (Đỏ) · 2 × 50ml',
       image: 'assets/order-duo.webp', quantity: 2, listPrice: 7990000, subtotal: 998000, shipping: 0, total: 998000, savings: 6992000,
       items: [{sku: 'TFL-540-BLANC-50', volumeMl: 50, quantity: 1},
         {sku: 'TFL-540-ROUGE-50', volumeMl: 50, quantity: 1}]})

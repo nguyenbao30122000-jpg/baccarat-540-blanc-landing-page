@@ -1,6 +1,6 @@
 # The Fragrance Lab — bộ nhận đơn v2
 
-Bộ nhận đơn Google Apps Script cho ba lựa chọn: 540 Trắng, 540 Đỏ, hoặc combo một chai mỗi loại. Mỗi chai trong cấu hình này là 50ml. Đây là mã nguồn tích hợp đã kiểm tra cục bộ, **chưa triển khai lên tài khoản Google và chưa bật nhận đơn thật**.
+Bộ nhận đơn Google Apps Script cho ba lựa chọn: Baccarat 540 Pearl (Trắng), Baccarat 540 Ruby (Đỏ), hoặc bộ đôi Pearl + Ruby gồm một chai mỗi loại. Mỗi chai trong cấu hình này là 50ml. Đây là mã nguồn tích hợp đã kiểm tra cục bộ, **chưa triển khai lên tài khoản Google và chưa bật nhận đơn thật**.
 
 ## Giá và dòng hàng
 
@@ -12,7 +12,9 @@ Bộ nhận đơn Google Apps Script cho ba lựa chọn: 540 Trắng, 540 Đỏ
 
 Combo có giá mua lẻ của hai sản phẩm là 1.098.000đ, giảm 100.000đ, còn 998.000đ. Phần giảm này tính trên tiền sản phẩm, tách biệt khỏi vận chuyển. `items[].unitPrice` và `items[].lineSubtotal` trong dữ liệu lưu là giá mua lẻ trước giảm combo; cột `Giam_combo` ghi mức giảm toàn đơn.
 
-Các mức giá và dung tích là cấu hình của bản thiết kế mới. Nguồn bán hàng cũ có thông tin 50ml/70ml chưa thống nhất; cần chốt đúng hàng giao trước khi bật bán thật. Mã nhận đơn dùng tên “540 Đỏ” để tránh tự quyết định thêm nồng độ/bao bì chưa được xác nhận.
+Pearl và Ruby là tên hiển thị cho hai lựa chọn Trắng và Đỏ tại The Fragrance Lab. Tên mới được ghi vào `San_pham` và tên từng dòng hàng; `offerId`, SKU, giá, dung tích và cấu trúc Sheet giữ nguyên. Đơn hàng cũ giữ tên đã lưu, không đổi dữ liệu lịch sử.
+
+Các mức giá và dung tích là cấu hình của bản thiết kế mới. Nguồn bán hàng cũ có thông tin 50ml/70ml chưa thống nhất; cần chốt đúng hàng giao trước khi bật bán thật. Việc đổi tên hiển thị không bổ sung cam kết về nồng độ hoặc bao bì.
 
 ## Giao diện tích hợp
 

@@ -3,8 +3,8 @@
   const root = typeof window === 'object' ? window : globalThis;
   const storageKey = 'tfl:last-confirmed-order';
   const productNames = Object.freeze({
-    'TFL-540-BLANC-50': 'Baccarat 540 Trắng',
-    'TFL-540-ROUGE-50': 'Baccarat 540 Đỏ'
+    'TFL-540-BLANC-50': 'Baccarat 540 Pearl (Trắng)',
+    'TFL-540-ROUGE-50': 'Baccarat 540 Ruby (Đỏ)'
   });
   function matchesItems(items, expected) {
     return Array.isArray(items) && items.length === expected.length &&

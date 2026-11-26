@@ -71,8 +71,8 @@ const good = api.create(payload, ack);
 check('combo names and individual quantities remain distinguishable', () => {
   assert.deepEqual(good.items.map((item) => item.sku), ['TFL-540-BLANC-50', 'TFL-540-ROUGE-50']);
   assert.deepEqual(good.items.map((item) => item.quantity), [1, 1]);
-  assert.equal(api.productNames['TFL-540-BLANC-50'], 'Baccarat 540 Trắng');
-  assert.equal(api.productNames['TFL-540-ROUGE-50'], 'Baccarat 540 Đỏ');
+  assert.equal(api.productNames['TFL-540-BLANC-50'], 'Baccarat 540 Pearl (Trắng)');
+  assert.equal(api.productNames['TFL-540-ROUGE-50'], 'Baccarat 540 Ruby (Đỏ)');
 });
 check('customer request data cannot acquire a confirmation without server acknowledgement', () => {
   for (const result of [null, {}, {...ack, success: false}, {...ack, receiverVersion: 1},
@@ -362,7 +362,7 @@ async function checkApplicationFlow() {
     const lines = blocked.ids.get('dialog-summary').children.map((line) => line.textContent).join('\n');
     for (const value of Object.values(customer)) assert.equal(lines.includes(value), true);
     assert.equal(lines.includes('998.000đ'), true);
-    assert.equal(lines.includes('Bộ đôi Trắng + Đỏ'), true);
+    assert.equal(lines.includes('Bộ đôi Pearl + Ruby'), true);
   });
 }
 

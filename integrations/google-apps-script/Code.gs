@@ -20,25 +20,25 @@ const TFL_ORDER_CONFIG = Object.freeze({
   ]),
   products: Object.freeze({
     'TFL-540-BLANC-50': Object.freeze({
-      name: 'Baccarat 540 Trắng', volumeMl: 50, unitPrice: 549000
+      name: 'Baccarat 540 Pearl (Trắng)', volumeMl: 50, unitPrice: 549000
     }),
     'TFL-540-ROUGE-50': Object.freeze({
-      name: 'Baccarat Rouge 540 Đỏ', volumeMl: 50, unitPrice: 549000
+      name: 'Baccarat 540 Ruby (Đỏ)', volumeMl: 50, unitPrice: 549000
     })
   }),
   offers: Object.freeze({
     white: Object.freeze({
-      name: 'Baccarat 540 Trắng',
+      name: 'Baccarat 540 Pearl (Trắng)',
       skus: Object.freeze(['TFL-540-BLANC-50']),
       subtotal: 549000, shipping: 30000, discount: 0
     }),
     red: Object.freeze({
-      name: 'Baccarat Rouge 540 Đỏ',
+      name: 'Baccarat 540 Ruby (Đỏ)',
       skus: Object.freeze(['TFL-540-ROUGE-50']),
       subtotal: 549000, shipping: 30000, discount: 0
     }),
     duo: Object.freeze({
-      name: 'Combo 540 Trắng + 540 Đỏ',
+      name: 'Bộ đôi Pearl + Ruby',
       skus: Object.freeze(['TFL-540-BLANC-50', 'TFL-540-ROUGE-50']),
       subtotal: 998000, shipping: 0, discount: 100000
     })

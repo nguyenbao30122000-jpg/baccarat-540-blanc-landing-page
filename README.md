@@ -1,6 +1,6 @@
-# The Fragrance Lab — Hãy chọn cách bạn xuất hiện
+# The Fragrance Lab — Ruby & Pearl
 
-Storefront tiếng Việt cho hai phiên bản Baccarat 540 Trắng và Đỏ, cùng lựa chọn combo Trắng + Đỏ. Câu chuyện tập trung vào phong thái cá nhân: Đỏ mạnh mẽ, quyền lực; Trắng nhẹ nhàng, tinh tế; combo cho hai sắc thái của cùng một người. Giữ ảnh riêng cho từng khu vực, hình nam nữ gần gũi, ưu đãi Tết và bộ font tiếng Việt hoàn chỉnh. HTML/CSS/JavaScript thuần, không có bước cài đặt hay build.
+Storefront tiếng Việt cho hai phiên bản Baccarat 540 Pearl (Trắng) và Ruby (Đỏ), cùng lựa chọn bộ đôi Pearl + Ruby. Câu chuyện tập trung vào phong thái cá nhân: Đỏ mạnh mẽ, quyền lực; Trắng nhẹ nhàng, tinh tế; combo cho hai sắc thái của cùng một người. Giữ ảnh riêng cho từng khu vực, hình nam nữ gần gũi, ưu đãi Tết và bộ font tiếng Việt hoàn chỉnh. HTML/CSS/JavaScript thuần, không có bước cài đặt hay build.
 
 ## Trạng thái
 
@@ -14,9 +14,9 @@ Storefront tiếng Việt cho hai phiên bản Baccarat 540 Trắng và Đỏ, c
 
 | Lựa chọn | Sản phẩm | Giá niêm yết | Giá Tết | Vận chuyển | Tổng thanh toán |
 | --- | --- | ---: | ---: | ---: | ---: |
-| `white` | 01 Baccarat 540 Trắng, 50ml | 3.995.000đ | 549.000đ | 30.000đ | 579.000đ |
-| `red` | 01 Baccarat 540 Đỏ, 50ml | 3.995.000đ | 549.000đ | 30.000đ | 579.000đ |
-| `duo` | 01 Trắng + 01 Đỏ, 50ml/chai | 7.990.000đ | 998.000đ | 0đ | 998.000đ |
+| `white` | 01 Baccarat 540 Pearl (Trắng), 50ml | 3.995.000đ | 549.000đ | 30.000đ | 579.000đ |
+| `red` | 01 Baccarat 540 Ruby (Đỏ), 50ml | 3.995.000đ | 549.000đ | 30.000đ | 579.000đ |
+| `duo` | 01 Pearl + 01 Ruby, 50ml/chai | 7.990.000đ | 998.000đ | 0đ | 998.000đ |
 
 Giá gạch ngang được khôi phục theo yêu cầu trực tiếp của chủ cửa hàng và đúng bản gốc: `index.html` tại commit `550a824` ghi Trắng 3.995.000đ/chai, 7.990.000đ/hai chai; trang `https://www.thefragrancelab.io.vn/sale` ghi Đỏ “3.995.000 >> 549.000/đ 1 chai”, đã đối chiếu lại bằng HTTP 200 ngày 26/11/2026. Giá niêm yết combo Trắng + Đỏ bằng tổng hai giá niêm yết đơn.
 
@@ -29,11 +29,11 @@ Mức tiết kiệm trình bày theo giá niêm yết: 3.446.000đ cho một cha
 - `dist/app.js`: danh mục ba lựa chọn, chọn SKU, tính tổng, validation, trạng thái preview/live, kiểm tra receiver v2, xác nhận sau ACK.
 - `dist/orders.js`: transport Apps Script iframe, kiểm tra nguồn phản hồi/token/request ID và timeout.
 - `dist/config.js`: cấu hình chế độ và URL receiver hiện có; mặc định preview.
-- `dist/assets/`: ảnh WebP và font cục bộ kèm giấy phép.
+- `dist/assets/`: ảnh WebP trong trang, JPEG riêng cho chia sẻ và font cục bộ kèm giấy phép.
 - `integrations/google-apps-script/`: receiver v2, hợp đồng payload, hướng dẫn triển khai và test.
 - `tests/frontend-tests.js`: kiểm tra logic danh mục, số điện thoại, payload, health và ACK.
 - `tests/tracking-tests.js`: kiểm tra bằng mô phỏng việc phân biệt ba gói, chặn conversion ở preview, chống ghi nhận trùng và không gửi thông tin khách vào analytics.
-- `scripts/sync-pages.mjs`: đồng bộ root `index.html` từ `dist/index.html`, giữ đúng đường dẫn tài nguyên và ảnh thay đổi theo lựa chọn.
+- `scripts/sync-pages.mjs`: đồng bộ trang chủ, trang cảm ơn và đường dẫn chia sẻ `/ruby-pearl/` từ nguồn trong `dist/`; giữ đúng đường dẫn tài nguyên, phiên bản JS/CSS và ảnh thay đổi theo lựa chọn.
 - `dist/tracking.js`: giữ GA4, Meta Pixel và TNANO của website gốc; sự kiện sản phẩm phân biệt Trắng, Đỏ và combo.
 - `review.html` và `dist/review.html`: xem giao diện ở các kích thước; không phát tracking trong iframe.
 - `cam-on.html` và `dist/cam-on.html`: trang cảm ơn đầy đủ sản phẩm, số lượng từng loại, họ tên, số điện thoại, địa chỉ, lời nhắn, tiền hàng, phí ship và thành tiền. Chỉ hiển thị xác nhận khi có receipt hợp lệ được tạo sau ACK.
@@ -43,6 +43,16 @@ Mức tiết kiệm trình bày theo giá niêm yết: 3.446.000đ cho một cha
 - `design/asset-prompts.txt`: prompt và nguồn tham chiếu của các ảnh ImageGen.
 - `design/tet-product-prompts.txt`, `design/tet-lifestyle-prompts.txt`: prompt, tham chiếu và cách dùng bộ ảnh mới mùa Tết.
 - `design/font-notes.txt`: nguồn chính thức, giấy phép, cách chuẩn bị và kiểm tra bộ font tiếng Việt mới.
+
+## Tên phiên bản và ảnh chia sẻ
+
+- **Ruby — Hồng ngọc quyền lực:** tên trưng bày của phiên bản Đỏ.
+- **Pearl — Ngọc trai tinh tế:** tên trưng bày của phiên bản Trắng.
+- Tên mới được đồng bộ trong HTML, catalog, tóm tắt đặt hàng, biên nhận và mã nguồn receiver v2. Mã `white` / `red` / `duo`, SKU, giá, phí giao hàng và các cột Google Sheet giữ nguyên; dữ liệu đơn cũ không bị đổi tên.
+- Ảnh Open Graph và Twitter dùng `dist/assets/social-ruby-pearl-20261126-v1.jpg`, JPEG RGB 1536 × 1024, URL mới để tránh cache ảnh cũ. Metadata khai báo kích thước, định dạng, mô tả ảnh và tên cửa hàng ngay trong HTML tĩnh.
+- Link chia sẻ mới: `https://thefragrancelabperfume.shop/ruby-pearl/`. Đây là storefront đầy đủ được sinh từ cùng nguồn với trang chủ, có `og:url` và canonical riêng; trang cảm ơn tương ứng ở `/ruby-pearl/cam-on.html`. Không đưa dữ liệu khách hàng vào URL.
+- Cache thẻ chia sẻ thuộc ứng dụng bên ngoài. Thay metadata không tự cập nhật thẻ đã tạo trước đó. Dùng link bộ sưu tập mới cho một thẻ mới; nếu cần làm mới URL gốc trên Facebook, dùng Sharing Debugger và thao tác Scrape Again trong tài khoản phù hợp.
+- Nguồn triển khai: https://ogp.me/ và https://developers.facebook.com/documentation/sharing/webmasters/images . Nguồn ảnh và cách xuất ảnh chia sẻ lưu tại `design/social-ruby-pearl-prompt.txt`.
 
 ## Kiểm tra
 

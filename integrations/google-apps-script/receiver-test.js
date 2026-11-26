@@ -334,13 +334,15 @@ test('v2 preserves all legacy columns and existing rows while adding item metada
 
 test('legacy product, SKU, quantity and money columns stay correct for every offer', () => {
   const h = harness();
+  const offerNames = {white: 'Baccarat 540 Pearl (Trắng)', red: 'Baccarat 540 Ruby (Đỏ)', duo: 'Bộ đôi Pearl + Ruby'};
+  const productNames = {[WHITE]: offerNames.white, [RED]: offerNames.red};
   for (const id of ['white', 'red', 'duo']) {
     const p = payload(id);
     assert.equal(response(h.call('doPost', eventFor(p))).success, true);
     const row = h.sheet().rows.at(-1);
     const expectedSkus = p.items.map(item => item.sku);
     assert.equal(row[6], expectedSkus.join(' + '));
-    assert.equal(row[5].includes(id === 'white' ? 'Trắng' : 'Đỏ'), true);
+    assert.equal(row[5], offerNames[id]);
     assert.equal(row[7], 50);
     assert.equal(row[8], p.quantity);
     assert.equal(row[9], p.subtotal);
@@ -349,6 +351,7 @@ test('legacy product, SKU, quantity and money columns stay correct for every off
     assert.equal(row[12], 'VND');
     assert.equal(row[24], id);
     assert.deepEqual(JSON.parse(row[25]).map(item => item.sku), expectedSkus);
+    assert.deepEqual(JSON.parse(row[25]).map(item => item.name), expectedSkus.map(sku => productNames[sku]));
   }
 });
 

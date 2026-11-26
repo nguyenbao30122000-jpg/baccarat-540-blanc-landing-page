@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="referrer" content="no-referrer">
+  <meta name="description" content="Thông tin yêu cầu đặt hàng của bạn tại The Fragrance Lab.">
+  <title>Cảm ơn bạn · The Fragrance Lab</title>
+  <link rel="icon" href="../dist/assets/favicon.svg?v=0c0716e18848" type="image/svg+xml">
+  <link rel="stylesheet" href="../dist/assets/fonts/fonts.css?v=bf1c102866f7">
+  <link rel="stylesheet" href="../dist/thank-you.css?v=dcba9abd37e7">
+  <script src="../dist/app.js?v=e4d50b85afa9" defer></script>
+  <script src="../dist/receipt.js?v=e5892c6b8ffd" defer></script>
+  <script src="../dist/thank-you.js?v=6ee6966d314c" defer></script>
+<script>window.TFL_ASSET_BASE="../dist/";</script>
+</head>
+<body data-page="thank-you" data-receipt-state="missing">
+  <a class="skip-link" href="#main">Đến nội dung đơn hàng</a>
+  <header class="thank-header">
+    <div class="shell header-inner">
+      <a class="wordmark" href="index.html" aria-label="The Fragrance Lab — về trang chủ"><span>THE FRAGRANCE LAB</span><small>DẤU ẤN RIÊNG. KHÍ CHẤT CỦA BẠN.</small></a>
+      <a class="back-link" href="index.html#bo-suu-tap">Về bộ sưu tập</a>
+    </div>
+  </header>
+  <main id="main" class="shell thank-main">
+    <section id="confirmed-receipt" class="rr-block rr-mask" data-private="true" hidden>
+      <div class="thank-intro">
+        <span class="status-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg></span>
+        <p class="eyebrow">ĐÃ NHẬN YÊU CẦU ĐẶT HÀNG</p>
+        <h1>Cảm ơn bạn đã chọn<br><em>dấu ấn riêng.</em></h1>
+        <p>The Fragrance Lab đã ghi nhận yêu cầu của bạn.<br>Cửa hàng sẽ liên hệ để xác nhận thông tin và giao hàng.</p>
+      </div>
+      <div class="receipt-layout">
+        <section class="receipt-card" aria-labelledby="products-heading">
+          <div class="card-heading"><p class="eyebrow">LỰA CHỌN CỦA BẠN</p><h2 id="products-heading">Một hương thơm. Một dấu ấn.</h2></div>
+          <div class="receipt-product">
+            <img id="receipt-product-image" src="../dist/assets/order-duo.webp" alt="Bộ đôi Pearl (Trắng) và Ruby (Đỏ)" width="1254" height="1254">
+            <div><h3 id="receipt-product-name">Bộ đôi Pearl + Ruby</h3><p id="receipt-quantity"></p><span class="tet-label">Ưu đãi Tết</span></div>
+          </div>
+          <ul id="receipt-items" class="receipt-items" aria-label="Chi tiết sản phẩm"></ul>
+          <dl class="receipt-prices">
+            <div><dt>Tiền sản phẩm</dt><dd id="receipt-subtotal"></dd></div>
+            <div><dt>Phí vận chuyển</dt><dd id="receipt-shipping"></dd></div>
+            <div class="receipt-total"><dt>Thành tiền</dt><dd id="receipt-total"></dd></div>
+          </dl>
+          <p class="receipt-help">Thông tin trên là yêu cầu đặt hàng đã được ghi nhận, chưa phải xác nhận thanh toán.</p>
+        </section>
+        <section class="receipt-card customer-card" aria-labelledby="customer-heading">
+          <div class="card-heading"><p class="eyebrow">THÔNG TIN ĐƠN HÀNG CỦA BẠN</p><h2 id="customer-heading">Thông tin nhận hàng</h2></div>
+          <dl class="customer-details">
+            <div><dt>Họ và tên</dt><dd id="receipt-customer-name"></dd></div>
+            <div><dt>Số điện thoại</dt><dd id="receipt-phone"></dd></div>
+            <div><dt>Địa chỉ nhận hàng</dt><dd id="receipt-address"></dd></div>
+            <div><dt>Lời nhắn</dt><dd id="receipt-note"></dd></div>
+          </dl>
+          <dl class="order-reference">
+            <div><dt>Mã yêu cầu</dt><dd id="receipt-order-id"></dd></div>
+            <div><dt>Thời gian</dt><dd id="receipt-date"></dd></div>
+          </dl>
+          <p class="receipt-help">Bạn kiểm tra lại thông tin và báo với cửa hàng khi nhận cuộc gọi xác nhận nếu cần điều chỉnh nhé.</p>
+        </section>
+      </div>
+      <div class="thank-closing"><blockquote>“Xuất hiện là khoảnh khắc.<br><em>Được nhớ là dấu ấn.</em>”</blockquote><p>Cảm ơn bạn đã để The Fragrance Lab đồng hành trong những khoảnh khắc ấy.</p><a class="button" href="index.html">Trở về trang chủ</a></div>
+    </section>
+    <section id="empty-receipt" class="empty-receipt">
+      <p class="eyebrow">THE FRAGRANCE LAB · TRẮNG & ĐỎ</p>
+      <h1>Một dấu ấn riêng.<br><em>Một lựa chọn của bạn.</em></h1>
+      <p id="receipt-empty-description">Chưa có đơn hàng được xác nhận trong phiên này. Thông tin đầy đủ sẽ xuất hiện tại đây sau khi cửa hàng ghi nhận yêu cầu của bạn.</p>
+      <a class="button" href="index.html#dat-hang">Về phần chọn sản phẩm</a>
+    </section>
+    <noscript><p class="noscript-note">Vui lòng bật JavaScript để xem thông tin đơn hàng trong phiên này.</p></noscript>
+  </main>
+  <footer class="thank-footer"><div class="shell"><p>THE FRAGRANCE LAB</p><span>Hãy chọn cách bạn xuất hiện.</span></div></footer>
+</body>
+</html>
