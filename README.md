@@ -1,6 +1,6 @@
-# The Fragrance Lab — Tết trao hương, gửi yêu thương
+# The Fragrance Lab — Hãy chọn cách bạn xuất hiện
 
-Storefront tiếng Việt cho hai phiên bản Baccarat 540 Trắng và Đỏ, cùng lựa chọn combo Trắng + Đỏ. Bản mùa Tết bổ sung ảnh riêng cho từng khu vực, câu chuyện và hình ảnh nam nữ, giá niêm yết gạch ngang và bộ font tiếng Việt hoàn chỉnh. HTML/CSS/JavaScript thuần, không có bước cài đặt hay build.
+Storefront tiếng Việt cho hai phiên bản Baccarat 540 Trắng và Đỏ, cùng lựa chọn combo Trắng + Đỏ. Câu chuyện tập trung vào phong thái cá nhân: Đỏ mạnh mẽ, quyền lực; Trắng nhẹ nhàng, tinh tế; combo cho hai sắc thái của cùng một người. Giữ ảnh riêng cho từng khu vực, hình nam nữ gần gũi, ưu đãi Tết và bộ font tiếng Việt hoàn chỉnh. HTML/CSS/JavaScript thuần, không có bước cài đặt hay build.
 
 ## Trạng thái
 
@@ -63,9 +63,9 @@ Khi duyệt giao diện cần kiểm tra desktop và khung điện thoại 375px
 
 ## Thiết kế và nội dung
 
-Thông điệp mới: “Hãy chọn cách bạn xuất hiện”; “Đỏ — màu của quyền lực và bản lĩnh”; “Trắng — màu của thanh lịch và tinh tế”; “Xuất hiện là khoảnh khắc. Được nhớ là dấu ấn.” Các mô tả này định vị phong cách, không phân loại giới tính hoặc hứa hẹn tác động đến người khác.
+Thông điệp chính: “Hãy chọn cách bạn xuất hiện”; “Đỏ — mạnh mẽ, quyền lực”; “Trắng — nhẹ nhàng, tinh tế”. Mỗi sản phẩm có câu chuyện phong thái riêng; combo là “Hai sắc thái. Cùng là bạn.” Khối ảnh cặp đôi giữ cảm giác gần gũi với “Gần rồi, khó xa” và “Khoảng cách ngắn lại. Dư âm dài hơn.” Đây là ngôn ngữ thương hiệu gợi cảm xúc, không phải cam kết tác động sinh học hoặc khiến người khác bị thu hút.
 
-Hệ màu kem sáng, đỏ rượu và vàng champagne. Chủ đề “Tết trao hương, gửi yêu thương” xuyên suốt thông báo đầu trang, mở đầu, bộ sưu tập, câu chuyện gặp gỡ, hai phần cho nàng/chàng, ưu đãi quà Tết và chọn mua. Những câu nói là nội dung thương hiệu, không gắn với khách hàng hoặc giả làm lời chứng thực. Không dùng số lượng đã bán, tồn kho hay đồng hồ đếm ngược chưa có dữ liệu.
+Hệ màu kem sáng, đỏ rượu và vàng champagne. Nội dung tình yêu và tặng người thương đã được thay bằng phong cách cá nhân ở hero, danh mục, câu chuyện, combo, hướng dẫn chọn, FAQ, phần kết, metadata và nhận diện trang cảm ơn. Tết được giữ làm chương trình ưu đãi. Ảnh nam nữ trưởng thành, ảnh cặp đôi gần gũi và các phối cảnh sản phẩm được giữ; chú thích hộp quà/phụ kiện không thuộc combo vẫn hiển thị rõ. Những câu nói là nội dung thương hiệu, không phải lời chứng thực của khách hàng. Không dùng số lượng đã bán, tồn kho hay đồng hồ đếm ngược chưa có dữ liệu.
 
 Noto Serif (tên CSS `TFL Editorial`) thay font tiêu đề cũ, có cả kiểu thường và kiểu nghiêng thật. Trục chiều rộng đã cố định 100%; chỉ trục độ đậm thay đổi. Nội dung dùng Be Vietnam Pro 400/500/600/700 với bản đầy đủ thay cho các tệp chia nhỏ theo bộ ký tự. Cả sáu font cục bộ đã kiểm tra đủ chữ Việt dạng NFC và NFD, gồm dấu mũ, dấu râu và dấu trăng. CSS tắt kiểu chữ tổng hợp bằng `font-synthesis: none`; nội dung HTML chuẩn hóa NFC; giãn dòng tiêu đề khoảng 1,28–1,5, nội dung thường 1,9–2. Không dùng biến đổi co kéo chữ.
 
