@@ -68,3 +68,12 @@ body{font-synthesis:none}.bundle-option strong{font-size:.875rem}.bundle-option 
 @media(max-width:380px){.hero-facts{font-size:.75rem}.announcement{font-size:.625rem}.brand>span{font-size:.75rem}.signature-strip span{font-size:.625rem}.hero-content>.subtle-link{font-size:.6875rem}.nav-order{font-size:.6875rem}}
 
 .preview-notice{color:#846e58}@media(max-width:760px){.hero-media img{object-position:100% center}}
+
+/* Seasonal promotional pricing; compare two singles with the actual two-bottle offer. */
+.season-price-label{display:inline-flex;align-items:center;align-self:flex-start;letter-spacing:.12em;font-size:.67rem;font-weight:700;padding:5px 9px;border:1px solid #a27e48;border-radius:2px;background:#8a6739;color:#fff9ed;white-space:nowrap}
+.previous-price{display:block;font-size:.84rem;line-height:1.65;letter-spacing:0;color:#806f5b;font-weight:400}
+.previous-price del,.bundle-option del{color:#987f66;text-decoration:line-through;text-decoration-thickness:1.5px;text-decoration-color:#9a7655}
+.offer-card .previous-price{margin-top:18px!important;margin-bottom:-14px!important}
+.gift-price .previous-price{margin-bottom:1px}
+.hero-price .season-price-label{font-size:.64rem;letter-spacing:.11em}
+@media(max-width:760px){.offer-card .previous-price{margin-top:12px!important;margin-bottom:-9px!important}.season-price-label{font-size:.62rem}.bundle-option small{overflow-wrap:anywhere}}
