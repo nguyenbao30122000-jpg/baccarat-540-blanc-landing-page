@@ -1,6 +1,6 @@
 window.TFL_CONFIG = Object.freeze({
   mode: 'preview',
-  orderEndpoint: '',
+  orderEndpoint: 'https://script.google.com/macros/s/AKfycbxRxbhfv9mLH2lCkEOfFihaT9a7Hv9CEDYNyEhL9_yzhQl7cItZrvFinZa8-5XAfeoB/exec',
   orderTransport: 'apps-script',
   orderTimeoutMs: 30000,
   trackingEnabled: true,
