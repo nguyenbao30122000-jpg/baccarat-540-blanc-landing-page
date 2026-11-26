@@ -33,13 +33,15 @@
       return false;
     }
   }
-  const live = config.mode === 'live' && endpointReady() && orderApiReady();
+  const stagingTest = config.mode === 'preview' &&
+    new URLSearchParams(window.location.search).get('tfl_test') === '1';
+  const live = (config.mode === 'live' || stagingTest) && endpointReady() && orderApiReady();
   function setCheckoutAvailable(available) {
     $$('input, textarea, button[type="submit"]', form).forEach((control) => { control.disabled = !available; });
     $('.submit-order').style.cursor = available ? '' : 'not-allowed';
     $('#submit-label').textContent = available ? 'Xem lại và đặt hàng' : 'Đặt hàng tạm đóng';
     $('#form-mode-notice').textContent = available
-      ? 'Thông tin bạn cung cấp được dùng để xử lý yêu cầu đặt hàng.'
+      ? (stagingTest ? 'CHẾ ĐỘ KIỂM THỬ: Chỉ nhập dữ liệu giả lập. Không gửi thông tin khách thật trước khi cửa hàng mở nhận đơn.' : 'Thông tin bạn cung cấp được dùng để xử lý yêu cầu đặt hàng.')
       : closedMessage;
   }
   function blockUnavailableCheckout() {
