@@ -6,6 +6,7 @@
   window.__TFL_TRACKING_LOADED__ = true;
 
   const root = document.documentElement;
+  const isThankYouPage = Boolean(document.body && document.body.dataset.page === 'thank-you');
   const status = (service, value) => root.setAttribute('data-tfl-' + service, value);
   const hostname = window.location.hostname.toLowerCase();
   const localHost = hostname === 'localhost' || hostname.endsWith('.localhost') ||
@@ -39,7 +40,7 @@
     const pageLocation = window.location.origin + window.location.pathname;
     let pageReferrer = '';
     try { if (document.referrer) pageReferrer = new URL(document.referrer).origin + '/'; } catch (_) { /* No referrer. */ }
-    const pageTitle = 'Baccarat 540 Trắng | The Fragrance Lab';
+    const pageTitle = isThankYouPage ? 'Cảm ơn bạn | The Fragrance Lab' : 'Baccarat 540 Trắng | The Fragrance Lab';
     const campaignParameters = {};
     const campaignKeys = {
       utm_source: 'campaign_source',
@@ -70,8 +71,10 @@
           page_title: pageTitle,
           ...parameters
         });
+        return true;
       } catch (_) {
         status('analytics', 'unavailable');
+        return false;
       }
     }
 
@@ -110,6 +113,7 @@
 
     // Register before loading the external tag, so early interactions are queued.
     document.addEventListener('tfl:offer_selected', (event) => {
+      if (isThankYouPage) return;
       const detail = event.detail || {};
       const offer = offerFor(detail.quantity);
       if (!offer) return;
@@ -122,7 +126,7 @@
     });
 
     document.addEventListener('tfl:checkout_started', (event) => {
-      if (checkoutStarted) return;
+      if (isThankYouPage || checkoutStarted) return;
       const offer = offerFor(event.detail && event.detail.quantity) || selectedOffer;
       if (!offer) return;
       checkoutStarted = true;
@@ -131,23 +135,32 @@
 
     document.addEventListener('tfl:order_received', (event) => {
       const detail = event.detail || {};
-      if (detail.acknowledged !== true || typeof detail.orderId !== 'string' || !detail.orderId.trim()) return;
-      if (receivedOrders.has(detail.orderId)) return;
+      const onTracked = typeof detail.onTracked === 'function' ? detail.onTracked : null;
+      let completed = false;
+      const complete = () => {
+        if (completed || !onTracked) return;
+        completed = true;
+        try { onTracked(); } catch (_) { /* Navigation must not affect analytics. */ }
+      };
+      if (isThankYouPage || detail.acknowledged !== true || typeof detail.orderId !== 'string' || !detail.orderId.trim()) { complete(); return; }
+      if (receivedOrders.has(detail.orderId)) { complete(); return; }
       const offer = offerFor(detail.quantity) || selectedOffer;
-      if (!offer) return;
+      if (!offer) { complete(); return; }
       receivedOrders.add(detail.orderId);
       // The ID stays in memory for deduplication; customer data never enters the tag payload.
-      track('generate_lead', {
+      const queued = track('generate_lead', {
         currency: 'VND',
         value: offer.subtotal,
         lead_source: 'website_order_form',
         offer_id: offer.quantity === 1 ? 'single' : 'duo',
-        quantity: offer.quantity
+        quantity: offer.quantity,
+        ...(onTracked ? {event_callback: complete, event_timeout: 1000} : {})
       });
+      if (!queued) complete();
     });
 
     document.addEventListener('click', (event) => {
-      if (!event.isTrusted || !(event.target instanceof Element)) return;
+      if (isThankYouPage || !event.isTrusted || !(event.target instanceof Element)) return;
       const link = event.target.closest('a[href="#dat-hang"]');
       if (!link) return;
       const placement = link.closest('.mobile-buybar') ? 'mobile_bar' :
@@ -169,7 +182,7 @@
       allow_ad_personalization_signals: false
     });
     track('page_view', {});
-    if (selectedOffer) track('view_item', itemParameters(selectedOffer));
+    if (!isThankYouPage && selectedOffer) track('view_item', itemParameters(selectedOffer));
 
     const script = document.createElement('script');
     script.id = 'tfl-google-tag';

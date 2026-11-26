@@ -14,7 +14,40 @@
   let currentOrder = null;
   let lastFocused = null;
   let sending = false;
-  const live = config.mode === 'live' && typeof config.orderEndpoint === 'string' && /^https:\/\//.test(config.orderEndpoint);
+  const closedMessage = 'Đặt hàng trực tuyến đang tạm đóng. Thông tin của bạn chưa được gửi.';
+  function orderApiReady() {
+    return !!window.TFLOrders && typeof window.TFLOrders.submit === 'function' &&
+      typeof window.TFLOrders.randomId === 'function';
+  }
+  function endpointReady() {
+    try {
+      const endpoint = new URL(config.orderEndpoint);
+      if (endpoint.protocol !== 'https:' || endpoint.username || endpoint.password) return false;
+      if (config.orderTransport === 'apps-script') {
+        return endpoint.origin === 'https://script.google.com' &&
+          /^\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(endpoint.pathname) &&
+          !endpoint.search && !endpoint.hash;
+      }
+      return config.orderTransport === 'json';
+    } catch (_) {
+      return false;
+    }
+  }
+  const live = config.mode === 'live' && endpointReady() && orderApiReady();
+  function setCheckoutAvailable(available) {
+    $$('input, textarea, button[type="submit"]', form).forEach((control) => { control.disabled = !available; });
+    $('.submit-order').style.cursor = available ? '' : 'not-allowed';
+    $('#submit-label').textContent = available ? 'Xem lại và đặt hàng' : 'Đặt hàng tạm đóng';
+    $('#form-mode-notice').textContent = available
+      ? 'Thông tin bạn cung cấp được dùng để xử lý yêu cầu đặt hàng.'
+      : closedMessage;
+  }
+  function blockUnavailableCheckout() {
+    setCheckoutAvailable(false);
+    $('.form-status').textContent = config.mode === 'live'
+      ? 'Chức năng đặt hàng chưa sẵn sàng. Vui lòng tải lại trang hoặc quay lại sau.'
+      : '';
+  }
 
   function closeMenu() {
     menu.hidden = true;
@@ -85,6 +118,7 @@
   selectBundle('1');
 
   function checkoutStarted() {
+    if (!live || !orderApiReady()) return;
     document.dispatchEvent(new CustomEvent('tfl:checkout_started', {
       detail: {quantity: config.offers[currentBundle].quantity}
     }));
@@ -152,6 +186,7 @@
   }
   form.addEventListener('submit', (event) => {
     event.preventDefault();
+    if (!live || !orderApiReady()) { blockUnavailableCheckout(); return; }
     const validity = fields.map((field) => validateField(field));
     if (validity.some((valid) => !valid)) {
       $('#' + fields[validity.indexOf(false)].id).focus();
@@ -194,6 +229,7 @@
   }});
   $('#dialog-primary').addEventListener('click', async () => {
     if (!live || !currentOrder) { closeDialog(); return; }
+    if (!orderApiReady()) { blockUnavailableCheckout(); closeDialog(); return; }
     if (sending) return;
     sending = true;
     const button = $('#dialog-primary');
@@ -221,11 +257,42 @@
       $('#dialog-edit').hidden = true;
       currentOrder = null;
       button.textContent = 'Đóng';
-      document.dispatchEvent(new CustomEvent('tfl:order_received', {
-        detail: {orderId: String(result.orderId), quantity: submittedOrder.quantity, acknowledged: true}
-      }));
+      let receiptSaved = false;
+      try {
+        window.sessionStorage.setItem('tfl:last-confirmed-order', JSON.stringify({
+          orderId: String(result.orderId),
+          quantity: submittedOrder.quantity,
+          subtotal: submittedOrder.subtotal,
+          shipping: submittedOrder.shipping,
+          total: submittedOrder.total,
+          currency: 'VND',
+          confirmedAt: new Date().toISOString()
+        }));
+        receiptSaved = true;
+      } catch (_) {
+        status.textContent = 'Cửa hàng đã nhận thông tin. Bạn có thể lưu lại mã đơn hiển thị phía trên.';
+      }
       form.reset();
       selectBundle('1');
+      let redirectTimer;
+      let redirected = false;
+      function openConfirmation() {
+        if (redirected) return;
+        redirected = true;
+        clearTimeout(redirectTimer);
+        try {
+          window.location.assign(new URL('cam-on.html', window.location.href).href);
+        } catch (_) {
+          status.textContent = 'Cửa hàng đã nhận thông tin. Bạn có thể lưu lại mã đơn hiển thị phía trên.';
+        }
+      }
+      if (receiptSaved) redirectTimer = setTimeout(openConfirmation, 1200);
+      document.dispatchEvent(new CustomEvent('tfl:order_received', {
+        detail: {
+          orderId: String(result.orderId), quantity: submittedOrder.quantity, acknowledged: true,
+          ...(receiptSaved ? {onTracked: openConfirmation} : {})
+        }
+      }));
     } catch (error) {
       status.textContent = ['AbortError', 'TimeoutError'].includes(error.name) ? 'Chưa xác nhận được trạng thái gửi đơn. Bạn có thể thử lại; mã yêu cầu được giữ nguyên.' : 'Chưa gửi được đơn hàng. Thông tin vẫn còn trên trang để bạn thử lại.';
       button.textContent = 'Thử gửi lại';
@@ -235,10 +302,8 @@
     }
   });
 
-  if (live) {
-    $('#submit-label').textContent = 'Xem lại và đặt hàng';
-    $('#form-mode-notice').textContent = 'Thông tin bạn cung cấp được dùng để xử lý yêu cầu đặt hàng.';
-  }
+  if (live) setCheckoutAvailable(true);
+  else blockUnavailableCheckout();
   if ('IntersectionObserver' in window) {
     const observer = new IntersectionObserver((entries) => {
       const visible = entries.some((entry) => entry.isIntersecting);

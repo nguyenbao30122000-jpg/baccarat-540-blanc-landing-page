@@ -17,6 +17,8 @@ GitHub Pages phục vụ nhánh `main`, thư mục `/ (root)`. File `index.html`
 - `dist/config.js`: chế độ form, endpoint và hai gói giá.
 - `dist/orders.js`: gửi đơn và chờ xác nhận đã lưu từ Apps Script.
 - `dist/tracking.js`: Google Analytics 4 và TNANO Replay.
+- `cam-on.html` và `dist/cam-on.html`: trang cảm ơn sau khi hệ thống xác nhận đã lưu đơn.
+- `dist/thank-you.js`, `dist/thank-you.css`: kiểm tra biên nhận và giao diện trang cảm ơn.
 - `integrations/google-apps-script/`: bộ nhận đơn cho Google Sheet, hướng dẫn triển khai và kiểm tra.
 - `dist/review.html`: trình duyệt giao diện máy tính / tablet / điện thoại.
 - `dist/assets/`: 6 ảnh WebP tạo riêng cho concept, favicon, font Be Vietnam Pro và giấy phép OFL.
@@ -34,7 +36,9 @@ Combo tiết kiệm 100.000đ tiền sản phẩm so với 2 × 549.000đ. Khôn
 
 ## Trạng thái form
 
-Mặc định `mode: 'preview'`, `orderEndpoint: ''`. Form chỉ cho xem lại trong trang, chưa gửi đơn tới hệ thống nhận đơn. Mã xử lý form không lưu thông tin khách vào localStorage/cookie. Tracking hoạt động riêng như phần bên dưới.
+Mặc định `mode: 'preview'`, `orderEndpoint: ''`. Form tạm khóa các trường thông tin khách và nút gửi, với thông báo rõ trước phần nhập liệu. Form chỉ mở khi có chế độ live, URL nhận đơn hợp lệ và module nhận đơn đã tải thành công. HTML mặc định dùng POST và khóa các trường để tránh gửi thông tin vào query URL nếu JavaScript không tải được.
+
+Sau ACK thành công, trang lưu mã đơn, số lượng, các khoản tiền và thời điểm vào `sessionStorage`, rồi chuyển tới `cam-on.html`. Không lưu tên, điện thoại, địa chỉ hoặc ghi chú vào biên nhận này. Trang cảm ơn không phát thêm lead hoặc purchase; truy cập trực tiếp không có biên nhận sẽ không hiển thị xác nhận đơn thành công. Nếu trình duyệt chặn storage, khách vẫn nhận xác nhận ngay trong trang đặt hàng.
 
 Đã chuẩn bị bộ nhận đơn cho Google Sheet **Baccarat 540 trắng**, ID `1O-QtB1kgtPPfwxzRHl6JlLfCnVb0javKbG8pCAaSoQQ`. Bộ nhận tạo tab `Don_hang_Web`, kiểm tra dữ liệu, tự tính giá và chống trùng bằng `idempotencyKey`. Mã ở `integrations/google-apps-script/Code.gs`; hướng dẫn triển khai nằm trong cùng thư mục.
 
