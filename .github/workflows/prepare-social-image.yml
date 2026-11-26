@@ -1,33 +1,56 @@
-name: Prepare Ruby Pearl social image
+name: Verify Ruby Pearl social sharing
 on:
   push:
     branches:
       - work/ruby-pearl-share-image-20261126
 permissions: {}
 jobs:
-  export:
+  verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 3
     steps:
-      - name: Install image encoder
-        run: python -m pip install --disable-pip-version-check Pillow
-      - name: Export approved duo image for sharing
+      - name: Verify public storefront and social image
         run: |
           python - <<'PY'
-          import base64, hashlib, io, json, urllib.request
-          from PIL import Image
-          url = "https://raw.githubusercontent.com/nguyenbao30122000-jpg/baccarat-540-blanc-landing-page/9c5a08efc08c3880026f2ea571c5354578687563/dist/assets/tet-hero.webp"
-          with urllib.request.urlopen(url, timeout=30) as response:
-              original = response.read()
-          image = Image.open(io.BytesIO(original)).convert("RGB")
-          output = io.BytesIO()
-          image.save(output, format="JPEG", quality=90, optimize=True, subsampling=0)
-          data = output.getvalue()
-          header = b"blob " + str(len(data)).encode() + bytes([0])
-          sha = hashlib.sha1(header + data).hexdigest()
-          print("TFL_IMAGE_META " + json.dumps({"width": image.width, "height": image.height, "size": len(data), "sha": sha, "mime": "image/jpeg"}))
-          encoded = base64.b64encode(data).decode()
-          for offset in range(0, len(encoded), 12000):
-              print("TFL_IMAGE_CHUNK " + str(offset) + " " + encoded[offset:offset + 12000])
-          print("TFL_IMAGE_END")
+          import hashlib, json, urllib.request
+          from html.parser import HTMLParser
+          class Meta(HTMLParser):
+              def __init__(self):
+                  super().__init__(); self.tags = {}
+              def handle_starttag(self, tag, attrs):
+                  values = dict(attrs)
+                  if tag == "meta":
+                      key = values.get("property", values.get("name", ""))
+                      self.tags[key] = values.get("content", "")
+          base = "https://thefragrancelabperfume.shop/"
+          pages = []
+          for path in ["", "ruby-pearl/"]:
+              url = base + path
+              request = urllib.request.Request(url, headers={"User-Agent": "facebookexternalhit/1.1"})
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  assert response.status == 200
+                  text = response.read().decode("utf-8")
+                  actual_url = response.url
+              parser = Meta(); parser.feed(text)
+              assert parser.tags["og:url"] == url
+              assert "Ruby" in parser.tags["og:title"] and "Pearl" in parser.tags["og:title"]
+              assert parser.tags["og:image"] == base + "dist/assets/social-ruby-pearl-20261126-v1.jpg"
+              assert parser.tags["og:image"] == parser.tags["twitter:image"]
+              assert parser.tags["og:image:type"] == "image/jpeg"
+              assert parser.tags["og:image:width"] == "1536" and parser.tags["og:image:height"] == "1024"
+              assert "Baccarat 540 <em>Pearl</em>" in text and "Baccarat 540 <em>Ruby</em>" in text
+              assert "3.995.000" in text and "7.990.000" in text
+              pages.append({"url": actual_url, "title": parser.tags["og:title"], "image": parser.tags["og:image"]})
+          with urllib.request.urlopen(base + "ruby-pearl/cam-on.html", timeout=30) as response:
+              assert response.status == 200
+              receipt = response.read().decode("utf-8")
+              assert "receipt" in receipt and "Pearl" in receipt
+          image_url = pages[0]["image"]
+          with urllib.request.urlopen(image_url, timeout=30) as response:
+              assert response.status == 200
+              assert response.headers.get("Content-Type").split(";")[0] == "image/jpeg"
+              image = response.read()
+          header = b"blob " + str(len(image)).encode() + bytes([0])
+          assert hashlib.sha1(header + image).hexdigest() == "45d23b9fd9ce839b5f361b24e49dba28b39face4"
+          print("TFL_PUBLIC_VERIFIED " + json.dumps({"status": "passed", "pages": pages, "receipt_url": base + "ruby-pearl/cam-on.html", "image_bytes": len(image)}, ensure_ascii=False))
           PY
