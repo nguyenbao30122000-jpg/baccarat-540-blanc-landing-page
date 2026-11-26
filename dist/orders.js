@@ -42,10 +42,14 @@
     return false;
   }
 
-  function validResult(result) {
+  function validResult(result, payload) {
     return result && result.success === true &&
       typeof result.orderId === 'string' && result.orderId.length > 0 &&
-      result.orderId.length <= 120;
+      result.orderId.length <= 120 && result.schemaVersion === 2 &&
+      result.receiverVersion === 2 && result.offerId === payload.offerId &&
+      result.quantity === payload.quantity && result.subtotal === payload.subtotal &&
+      result.shipping === payload.shipping && result.total === payload.total &&
+      result.currency === 'VND';
   }
 
   function submitAppsScript(payload, options) {
@@ -106,8 +110,7 @@
         if (!result || result.type !== 'tfl:order-result' ||
             result.requestId !== payload.idempotencyKey ||
             result.responseToken !== responseToken) return;
-        if (!validResult(result) || result.quantity !== payload.quantity ||
-            result.total !== payload.total || result.currency !== 'VND') {
+        if (!validResult(result, payload)) {
           const error = new Error('order_rejected');
           error.code = typeof result.code === 'string' ? result.code : 'unconfirmed';
           finish(error);
@@ -143,7 +146,7 @@
         signal: controller.signal
       });
       const result = await response.json();
-      if (!response.ok || !validResult(result)) throw new Error('unconfirmed');
+      if (!response.ok || !validResult(result, payload)) throw new Error('unconfirmed');
       return result;
     } finally {
       clearTimeout(timeout);

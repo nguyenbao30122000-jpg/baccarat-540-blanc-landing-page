@@ -1,130 +1,121 @@
-# Google Sheets order receiver
+# The Fragrance Lab — bộ nhận đơn v2
 
-The receiver appends confirmed order requests to the spreadsheet selected by the shop:
+Bộ nhận đơn Google Apps Script cho ba lựa chọn: 540 Trắng, 540 Đỏ, hoặc combo một chai mỗi loại. Mỗi chai trong cấu hình này là 50ml. Đây là mã nguồn tích hợp đã kiểm tra cục bộ, **chưa triển khai lên tài khoản Google và chưa bật nhận đơn thật**.
 
-https://docs.google.com/spreadsheets/d/1O-QtB1kgtPPfwxzRHl6JlLfCnVb0javKbG8pCAaSoQQ/edit
+## Giá và dòng hàng
 
-The default destination is a dedicated tab named **Don_hang_Web**. Existing tabs are not cleared or repurposed. If the destination tab exists but has different headers, the receiver stops with a configuration error instead of overwriting it.
+| `offerId` | Sản phẩm | Tiền sản phẩm | Vận chuyển | Tổng |
+| --- | --- | ---: | ---: | ---: |
+| `white` | `TFL-540-BLANC-50` × 1 | 549.000đ | 30.000đ | 579.000đ |
+| `red` | `TFL-540-ROUGE-50` × 1 | 549.000đ | 30.000đ | 579.000đ |
+| `duo` | Mỗi SKU trên × 1 | 998.000đ | 0đ | 998.000đ |
 
-## Deploy
+Combo có giá mua lẻ của hai sản phẩm là 1.098.000đ, giảm 100.000đ, còn 998.000đ. Phần giảm này tính trên tiền sản phẩm, tách biệt khỏi vận chuyển. `items[].unitPrice` và `items[].lineSubtotal` trong dữ liệu lưu là giá mua lẻ trước giảm combo; cột `Giam_combo` ghi mức giảm toàn đơn.
 
-1. Sign in with a Google account that can edit the destination spreadsheet.
-2. Create an Apps Script project, or use **Extensions > Apps Script** from the spreadsheet. Add the supplied Code.gs.
-3. Enable the manifest in **Project Settings**, then use the supplied appsscript.json. It requests the Spreadsheet service scope; the sheet itself does not need public access.
-4. Run **setupOrderSheet** once from the editor and approve access. This creates the dedicated tab and headers if necessary, without adding an order.
-5. Choose **Deploy > New deployment > Web app**:
-   - Execute as: **Me** / the deploying account.
-   - Who has access: **Anyone**, including signed-out visitors. In the manifest this is ANYONE_ANONYMOUS, not ANYONE (which requires a signed-in user).
-6. Copy the production URL ending in **/exec**. The **/dev** URL is for editors and must not be placed in the public landing page.
-7. Configure the landing page to use the Apps Script transport and this real endpoint. Verify an actual acknowledged test order in the sheet before enabling live checkout.
+Các mức giá và dung tích là cấu hình của bản thiết kế mới. Nguồn bán hàng cũ có thông tin 50ml/70ml chưa thống nhất; cần chốt đúng hàng giao trước khi bật bán thật. Mã nhận đơn dùng tên “540 Đỏ” để tránh tự quyết định thêm nồng độ/bao bì chưa được xác nhận.
 
-If an organization policy prevents anonymous web apps, the public receiver cannot work with that deployment. The frontend must remain in preview until a deployment with the required access or a separate server endpoint is available.
+## Giao diện tích hợp
 
-Updates require a new deployed version through **Deploy > Manage deployments**. Updating the existing deployment preserves its URL.
+Hợp đồng máy đọc được nằm trong `contract.json`. `GET <web-app-exec-url>?action=health` trả về JSON có:
 
-To use a different dedicated tab, set the Script Property **ORDER_SHEET_NAME**. An existing nonempty tab must have the receiver's exact headers. Do not select a tab containing unrelated business data.
-
-## Browser transport
-
-The production frontend sends an HTML form POST to the deployment URL, targeting an off-screen iframe. The form uses application/x-www-form-urlencoded and contains these fields:
-
-| Field | Value |
-| --- | --- |
-| payload | JSON string containing the order data |
-| responseMode | bridge |
-| parentOrigin | The exact location.origin of the landing page |
-| requestId | The payload's idempotencyKey, a random UUID v4 |
-| responseToken | A separate cryptographically random token, 32–128 letters, digits, hyphens or underscores |
-
-Allowed landing origins are defined in Code.gs:
-
-- https://thefragrancelabperfume.shop
-- https://www.thefragrancelabperfume.shop
-- https://nguyenbao30122000-jpg.github.io
-
-The receiver returns an HtmlService page with ALLOWALL framing. That page sends a postMessage acknowledgement to each ancestor using the exact allowed parentOrigin. This accommodates Google's HtmlService sandbox iframe and the site's optional preview frame.
-
-The client must validate all of the following before accepting an acknowledgement:
-
-- The message type is **tfl:order-result** and its shape is correct.
-- requestId and responseToken match the current request.
-- The sender uses HTTPS and a permitted Apps Script origin: script.google.com, script.googleusercontent.com, or a hostname matching the anchored pattern **^[a-z0-9-]+-script\.googleusercontent\.com$**.
-- The sender window, or one of its bounded parent windows, is the exact iframe created for this submission.
-- success is true, orderId is a valid identifier, and quantity/total match the selected offer.
-
-Do not use a wildcard targetOrigin. The allowlist controls message delivery; it is not authentication of an anonymous sender. The server validates all incoming data independently.
-
-A successful response has this shape:
-
-~~~json
+```json
 {
-  "type": "tfl:order-result",
-  "requestId": "<request UUID>",
-  "responseToken": "<matching random token>",
   "success": true,
-  "orderId": "<server UUID>",
-  "quantity": 1,
-  "total": 579000,
+  "ok": true,
+  "schemaVersion": 2,
+  "receiverVersion": 2,
   "currency": "VND",
-  "duplicate": false
+  "capabilities": {"offerIds": ["white", "red", "duo"]},
+  "offers": {
+    "white": {"subtotal": 549000, "shipping": 30000, "total": 579000},
+    "red": {"subtotal": 549000, "shipping": 30000, "total": 579000},
+    "duo": {"subtotal": 998000, "shipping": 0, "total": 998000}
+  }
 }
-~~~
+```
 
-An error has success:false, a code, a customer-safe message and retryable. A receipt never includes the customer's name, phone, address, note, UTM data or sheet contents.
+Phản hồi thực tế còn có các trường mô tả dịch vụ và dòng hàng. Frontend phải kiểm tra phiên bản, các gói và giá trước khi mở form. Phản hồi receiver v1, lỗi đọc JSON, lỗi mạng hoặc khác giá phải giữ chức năng gửi đơn đóng và hiện cách liên hệ cửa hàng. Health chỉ xác minh dịch vụ/khả năng, không chứng minh một đơn đã lưu.
 
-An iframe load event alone is not proof of a saved order. If no valid acknowledgement arrives, show that the order's status is unconfirmed and keep the same idempotencyKey for a retry. A fresh responseToken may be used for each transport attempt. Only a confirmed acknowledgement should trigger an order-received event or conversion tracking.
+### Payload
 
-## Order data and storage
+POST payload là JSON có:
 
-The payload accepts the existing site's fields:
+```json
+{
+  "schemaVersion": 2,
+  "offerId": "duo",
+  "currency": "VND",
+  "items": [
+    {"sku": "TFL-540-BLANC-50", "volumeMl": 50, "quantity": 1},
+    {"sku": "TFL-540-ROUGE-50", "volumeMl": 50, "quantity": 1}
+  ],
+  "quantity": 2,
+  "subtotal": 998000,
+  "shipping": 0,
+  "total": 998000,
+  "customerName": "Tên khách hàng",
+  "phone": "0901234567",
+  "address": "Địa chỉ nhận hàng đầy đủ",
+  "note": "",
+  "idempotencyKey": "11111111-1111-4111-8111-111111111111",
+  "attribution": {"utm_source": "website"}
+}
+```
 
-- product, sku, volumeMl, quantity, currency
-- customerName, phone, address, note
-- attribution: utm_source, utm_medium, utm_campaign, utm_content, utm_term
-- idempotencyKey
+Ví dụ trên là dữ liệu minh họa, không phải đơn thật. UUID cần được tạo mới bằng nguồn ngẫu nhiên an toàn cho từng yêu cầu mới. Giữ nguyên UUID khi thử lại một yêu cầu chưa rõ đã lưu hay chưa. Thay nội dung khách hàng hoặc gói sau một yêu cầu đã gửi phải tạo UUID mới.
 
-Client product names and monetary values are not trusted. The receiver stores the configured product/SKU and recalculates prices:
+`note` và `attribution` không bắt buộc. Không gửi thêm trường ngoài hợp đồng. `items` chỉ nhận `sku`, `volumeMl`, `quantity`; tên và đơn giá được lấy từ catalog trên server. Số tiền phải là số nguyên VND, không phải chuỗi. Server tự tính mọi khoản và từ chối giá frontend không khớp.
 
-| Quantity | Subtotal | Shipping | Total |
-| --- | ---: | ---: | ---: |
-| 1 × 50ml | 549000 | 30000 | 579000 |
-| 2 × 50ml | 998000 | 0 | 998000 |
+### Transport Apps Script
 
-The receiver validates a UUID v4 request ID, the SKU/volume/currency, the two supported quantities, Vietnamese mobile numbers and bounded customer fields. It normalizes Vietnamese text to NFC. Untrusted text is escaped as literal spreadsheet text, preserving phone zeros and preventing formula evaluation.
+Giữ cách gửi form POST vào iframe ẩn để tránh suy ra thành công từ phản hồi opaque. Các field ngoài JSON payload:
 
-Every row includes a Vietnam-time timestamp, a server-generated UUID order ID, the idempotency key, a fingerprint, status, product and price fields, customer fields and the five allowed UTM values. The receiver does not change the spreadsheet's global timezone.
+| Field | Giá trị |
+| --- | --- |
+| `payload` | JSON.stringify(payload ở trên) |
+| `responseMode` | `bridge` |
+| `parentOrigin` | `window.location.origin` chính xác |
+| `requestId` | Cùng UUID với `payload.idempotencyKey` |
+| `responseToken` | Token ngẫu nhiên riêng cho lần gửi, 32–128 ký tự A–Z/a–z/0–9/_/- |
 
-A Script Lock covers duplicate lookup and append. A retry with the same idempotency key and same order returns the original order ID. Reusing a key for changed customer/order content is rejected. Successful acknowledgement occurs only after appendRow and SpreadsheetApp.flush complete. If saving succeeded but the response was lost, retrying the unchanged request does not add another row.
+Frontend chỉ xác nhận đã nhận đơn khi nhận `postMessage` từ origin Google được chấp nhận, đúng iframe (hoặc iframe con Google), đúng `requestId`, đúng `responseToken`, đúng phiên bản, gói, dòng hàng và toàn bộ số tiền.
 
-Do not remove or edit the request key, fingerprint, order ID or numeric amount columns in existing rows. Moving this receiver into a second Apps Script project requires care: Script Locks coordinate one project, not different projects writing to the same tab.
+ACK thành công giữ `type: 'tfl:order-result'` và thêm `schemaVersion: 2`, `receiverVersion: 2`, `offerId`, `items`, `subtotal`, `shipping`, `discount`, `quantity`, `total`, `currency`, `orderId`, `duplicate`. Không chứa tên, số điện thoại, địa chỉ hoặc ghi chú. ACK chỉ được tạo sau khi lưu và flush thành công; đây là xác nhận nhận yêu cầu, không phải xác nhận đã thanh toán.
 
-GET returns only a service-health object. It does not read or expose orders. It proves that the web app is reachable, not that an order has been saved.
+ACK lỗi có `success:false`, `code`, `message`, `retryable`. Trường hợp timeout không được tự kết luận đã lưu hoặc chưa lưu. Thử lại cùng UUID để tránh tạo trùng.
 
-## Why the bridge
+JSON POST trực tiếp vẫn được hỗ trợ cho tích hợp phù hợp. Không xem allowlist origin hay response token là xác thực người mua: đây là endpoint nhận yêu cầu ẩn danh; allowlist và token bảo vệ tuyến phản hồi bridge. Không đặt khóa bí mật trong frontend.
 
-ContentService redirects output to googleusercontent.com. Its documented TextOutput interface does not offer arbitrary response headers, and the Web Apps guide does not promise browser CORS/preflight support for this checkout. A direct JSON response remains available for server-to-server callers that follow redirects.
+## Lưu dữ liệu
 
-The browser checkout therefore uses an acknowledged iframe form POST. It does not interpret an opaque mode:no-cors response, HTTP completion or iframe load as success.
+`Code.gs` giữ nguyên spreadsheet đích của hệ thống cũ, nhưng dùng tab mới **`Don_hang_Web_v2`** và cấu trúc cột riêng. Không đổi hay xóa dữ liệu tab cũ. Nếu muốn đổi tên tab v2, đặt Script Property `ORDER_SHEET_NAME_V2`. Thuộc tính v1 `ORDER_SHEET_NAME` không được dùng lại.
 
-The sheet stays private. Visitors submit to the deployed script, which runs with the owner's authorized sheet access. No Google credentials or OAuth token belongs in the frontend.
+Dữ liệu có dòng hàng JSON riêng biệt, số chai trắng, số chai đỏ, tổng số chai, tổng dung tích, giá mua lẻ, giảm combo, tiền sản phẩm, vận chuyển và tổng. Nội dung do khách nhập được trung hòa trước khi ghi vào Sheet để tránh bị diễn giải là công thức.
 
-## Local verification
+Khóa script bảo vệ bước tìm mã trùng và ghi hàng. Cùng `idempotencyKey` + cùng nội dung chuẩn hóa trả lại mã đơn trước đó; cùng key nhưng đổi gói/khách/giá trả `REQUEST_CONFLICT`. Không có đường xóa hay sửa đơn thông qua endpoint.
 
-Run:
+## Triển khai trong tài khoản Google
 
-~~~sh
-node integrations/google-apps-script/backend.test.cjs
-~~~
+Bước này cần đăng nhập tài khoản Google có quyền chỉnh sửa Apps Script và spreadsheet của cửa hàng. Mã nguồn cục bộ không cấp quyền đó và không tự cập nhật deployment đang chạy.
 
-These tests use an in-memory Apps Script service stub. They check price tampering, validation, literal cell values, duplicate handling, preservation of existing tab content, lost acknowledgement/retry behavior and the receipt contract. They do not deploy or contact Google and do not replace a real browser-to-sheet check after deployment.
+1. Mở dự án Apps Script nhận đơn của cửa hàng và lưu lại phiên bản hiện tại.
+2. Cập nhật `Code.gs` bằng bản này. Kiểm tra `allowedOrigins`; đã có hai origin tên miền `.shop`, GitHub Pages và origin Sites chính xác được cung cấp cho bản mới. Khi dùng địa chỉ khác, thêm đúng origin, không dùng ký tự đại diện.
+3. Chạy `setupOrderSheet()` trong editor và cấp quyền cần thiết. Hàm tạo/kiểm tra tab v2, không tạo đơn.
+4. Triển khai phiên bản web app v2 bằng quyền của chủ cửa hàng, với quyền truy cập phù hợp cho khách đặt hàng không cần đăng nhập Google. Dùng URL triển khai `/exec`, không dùng URL editor hay `/dev`.
+5. Đọc health và đối chiếu `receiverVersion:2`, ba gói và giá. Chưa bật live nếu health không xác nhận chính xác.
+6. Đặt URL `/exec` v2 trong cấu hình frontend, cấu hình phiên bản receiver yêu cầu là 2. Kiểm tra toàn bộ đường gửi/ACK bằng một đơn kiểm thử được chủ cửa hàng cho phép, đối chiếu đúng SKU và số tiền trong Sheet; không suy ra thành công chỉ từ frontend.
+7. Sau khi xác minh gói, dung tích, giá, chính sách và đường nhận đơn, bật chế độ live. Endpoint v1 hiện tại không đủ khả năng nhận 540 Đỏ hoặc combo.
 
-## Primary references
+Các thay đổi không thực hiện trong phiên làm việc này: đăng nhập Google, cấp quyền, đổi deployment, gửi đơn thật, hoặc chuyển form sang live.
 
-- [Apps Script web apps: POST parameters, deployment and execution identity](https://developers.google.com/apps-script/guides/web)
-- [Manifest access levels: ANYONE versus ANYONE_ANONYMOUS](https://developers.google.com/apps-script/manifest/web-app-api-executable)
-- [HtmlService XFrameOptionsMode](https://developers.google.com/apps-script/reference/html/x-frame-options-mode)
-- [HtmlService iframe restrictions](https://developers.google.com/apps-script/guides/html/restrictions)
-- [ContentService redirects and JSONP limitations](https://developers.google.com/apps-script/guides/content)
-- [TextOutput API](https://developers.google.com/apps-script/reference/content/text-output)
-- [LockService](https://developers.google.com/apps-script/reference/lock/lock-service)
-- [HTML Standard: origin checks and postMessage](https://html.spec.whatwg.org/multipage/web-messaging.html#posting-messages)
+## Kiểm tra cục bộ
+
+Chạy:
+
+```sh
+node receiver-test.js
+```
+
+Bộ 15 kiểm tra dùng Node VM và giả lập Google Services trong bộ nhớ; không gọi mạng hay gửi đơn. Phạm vi gồm: health và ba bảng giá, SKU/dung tích/số lượng, giá bị sửa, dữ liệu sai, ACK không chứa thông tin khách, retry không trùng, xung đột request, dữ liệu cũ bị sai, khóa bận, flush thất bại, transport sai, origin Sites, trung hòa công thức, tách tab v1/v2.
+
+Các kiểm tra này không thay thế kiểm chứng deployment thực tế, quyền Google Sheet, CORS/iframe trong trình duyệt hoặc việc đơn thật đến được người xử lý.

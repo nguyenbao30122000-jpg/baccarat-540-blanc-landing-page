@@ -1,35 +1,101 @@
+/**
+ * The Fragrance Lab order receiver, schema v2.
+ * Anonymous order requests; a success ACK confirms storage, not payment.
+ * Deploy this source as a new Apps Script web-app version before enabling v2.
+ */
 const TFL_ORDER_CONFIG = Object.freeze({
   spreadsheetId: '1O-QtB1kgtPPfwxzRHl6JlLfCnVb0javKbG8pCAaSoQQ',
-  sheetName: 'Don_hang_Web',
+  sheetName: 'Don_hang_Web_v2',
   timezone: 'Asia/Ho_Chi_Minh',
-  productName: 'Baccarat 540 Trắng',
-  sku: 'TFL-540-BLANC-50',
-  volumeMl: 50,
+  schemaVersion: 2,
   maxPayloadChars: 12000,
   allowedOrigins: Object.freeze([
     'https://thefragrancelabperfume.shop',
     'https://www.thefragrancelabperfume.shop',
-    'https://nguyenbao30122000-jpg.github.io'
+    'https://nguyenbao30122000-jpg.github.io',
+    'https://the-fragrance-lab-duo-atelier.kh-ng-gian-l-3718.chatgpt.site'
+    // Add the exact deployed Sites origin here when it is known.
+    // Do not use a wildcard, a guessed origin, a trailing slash, or a URL path.
   ]),
+  products: Object.freeze({
+    'TFL-540-BLANC-50': Object.freeze({
+      name: 'Baccarat 540 Trắng', volumeMl: 50, unitPrice: 549000
+    }),
+    'TFL-540-ROUGE-50': Object.freeze({
+      name: 'Baccarat Rouge 540 Đỏ', volumeMl: 50, unitPrice: 549000
+    })
+  }),
   offers: Object.freeze({
-    1: Object.freeze({subtotal: 549000, shipping: 30000}),
-    2: Object.freeze({subtotal: 998000, shipping: 0})
+    white: Object.freeze({
+      name: 'Baccarat 540 Trắng',
+      skus: Object.freeze(['TFL-540-BLANC-50']),
+      subtotal: 549000, shipping: 30000, discount: 0
+    }),
+    red: Object.freeze({
+      name: 'Baccarat Rouge 540 Đỏ',
+      skus: Object.freeze(['TFL-540-ROUGE-50']),
+      subtotal: 549000, shipping: 30000, discount: 0
+    }),
+    duo: Object.freeze({
+      name: 'Combo 540 Trắng + 540 Đỏ',
+      skus: Object.freeze(['TFL-540-BLANC-50', 'TFL-540-ROUGE-50']),
+      subtotal: 998000, shipping: 0, discount: 100000
+    })
   })
 });
 
 const TFL_ORDER_HEADERS = Object.freeze([
   'Thoi_gian_VN', 'Ma_don', 'Idempotency_key', 'Payload_hash', 'Trang_thai',
-  'San_pham', 'SKU', 'Dung_tich_ml', 'So_luong', 'Tien_san_pham',
-  'Phi_van_chuyen', 'Tong_thanh_toan', 'Tien_te', 'Ho_va_ten',
-  'Dien_thoai', 'Dia_chi', 'Ghi_chu', 'utm_source', 'utm_medium',
-  'utm_campaign', 'utm_content', 'utm_term', 'Nguon_website'
+  'Phien_ban', 'Ma_goi', 'Ten_goi', 'Chi_tiet_san_pham_JSON',
+  'So_chai_trang', 'So_chai_do', 'Tong_so_chai', 'Tong_dung_tich_ml',
+  'Gia_mua_le', 'Giam_combo', 'Tien_san_pham', 'Phi_van_chuyen',
+  'Tong_thanh_toan', 'Tien_te', 'Ho_va_ten', 'Dien_thoai', 'Dia_chi',
+  'Ghi_chu', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content',
+  'utm_term', 'Nguon_website'
 ]);
 
 const TFL_UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const TFL_RESPONSE_TOKEN_PATTERN = /^[A-Za-z0-9_-]{32,128}$/;
+const TFL_PAYLOAD_FIELDS = Object.freeze([
+  'schemaVersion', 'offerId', 'currency', 'items', 'quantity', 'subtotal',
+  'shipping', 'total', 'customerName', 'phone', 'address', 'note',
+  'idempotencyKey', 'attribution'
+]);
 
 function doGet() {
-  return jsonResponse_({ok: true, service: 'TFL order receiver', version: 1});
+  const offers = {};
+  Object.keys(TFL_ORDER_CONFIG.offers).forEach(function (id) {
+    const offer = TFL_ORDER_CONFIG.offers[id];
+    offers[id] = {
+      offerId: id,
+      items: offer.skus.map(function (sku) {
+        return {sku: sku, volumeMl: TFL_ORDER_CONFIG.products[sku].volumeMl, quantity: 1};
+      }),
+      quantity: offer.skus.length,
+      subtotal: offer.subtotal,
+      shipping: offer.shipping,
+      total: offer.subtotal + offer.shipping,
+      discount: offer.discount,
+      currency: 'VND'
+    };
+  });
+  return jsonResponse_({
+    ok: true,
+    success: true,
+    service: 'TFL order receiver',
+    version: 2,
+    receiverVersion: 2,
+    schemaVersion: 2,
+    currency: 'VND',
+    capabilities: {
+      offerIds: ['white', 'red', 'duo'],
+      itemizedOrders: true,
+      idempotency: true,
+      acknowledgement: 'tfl:order-result',
+      transports: ['apps-script-bridge', 'json']
+    },
+    offers: offers
+  });
 }
 
 function doPost(e) {
@@ -47,8 +113,7 @@ function doPost(e) {
         (!allowedOrigin_(context.parentOrigin) || !context.requestId || !context.responseToken)) {
       fail_('INVALID_TRANSPORT', 'Không xác nhận được nguồn gửi yêu cầu.');
     }
-    const payload = parsePayload_(e);
-    const order = validateOrder_(payload);
+    const order = validateOrder_(parsePayload_(e));
     if (context.bridge && context.requestId !== order.idempotencyKey) {
       fail_('INVALID_REQUEST', 'Mã yêu cầu không khớp. Vui lòng thử lại.');
     }
@@ -64,12 +129,12 @@ function doPost(e) {
         'Chưa xác nhận được đơn đã lưu. Vui lòng thử lại với cùng yêu cầu.',
       retryable: code === 'BUSY' || code === 'ORDER_SAVE_FAILED'
     };
-    if (!known) console.error('[TFL orders] ORDER_SAVE_FAILED');
+    // Customer data, submitted payloads and exception messages are never logged.
+    if (!known) console.error('[TFL orders v2] ORDER_SAVE_FAILED');
   }
   const message = Object.assign({
-    type: 'tfl:order-result',
-    requestId: context.requestId,
-    responseToken: context.responseToken
+    type: 'tfl:order-result', version: 2, receiverVersion: 2, schemaVersion: 2,
+    requestId: context.requestId, responseToken: context.responseToken
   }, response);
   if (context.bridge && allowedOrigin_(context.parentOrigin)) {
     return bridgeResponse_(message, context.parentOrigin);
@@ -83,7 +148,7 @@ function setupOrderSheet() {
   try {
     const sheet = orderSheet_();
     SpreadsheetApp.flush();
-    return {ok: true, sheetName: sheet.getName()};
+    return {ok: true, schemaVersion: 2, sheetName: sheet.getName()};
   } finally {
     lock.releaseLock();
   }
@@ -103,31 +168,63 @@ function parsePayload_(e) {
     fail_('INVALID_REQUEST', 'Dữ liệu đơn hàng không hợp lệ.');
   }
   let payload;
-  try {
-    payload = JSON.parse(raw);
-  } catch (error) {
-    fail_('INVALID_REQUEST', 'Không đọc được dữ liệu đơn hàng.');
-  }
-  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
-    fail_('INVALID_REQUEST', 'Dữ liệu đơn hàng không hợp lệ.');
-  }
+  try { payload = JSON.parse(raw); }
+  catch (error) { fail_('INVALID_REQUEST', 'Không đọc được dữ liệu đơn hàng.'); }
+  if (!plainRecord_(payload)) fail_('INVALID_REQUEST', 'Dữ liệu đơn hàng không hợp lệ.');
   return payload;
 }
 
 function validateOrder_(payload) {
+  if (!plainRecord_(payload) || Object.keys(payload).some(function (field) {
+    return TFL_PAYLOAD_FIELDS.indexOf(field) === -1;
+  })) fail_('INVALID_REQUEST', 'Dữ liệu đơn hàng có trường không được hỗ trợ.');
+  if (payload.schemaVersion !== 2) {
+    fail_('UNSUPPORTED_SCHEMA', 'Phiên bản đặt hàng đã thay đổi. Vui lòng tải lại trang.');
+  }
   if (!validUuid_(payload.idempotencyKey)) {
     fail_('INVALID_REQUEST', 'Mã yêu cầu không hợp lệ.');
   }
-  if (payload.sku !== TFL_ORDER_CONFIG.sku ||
-      Number(payload.volumeMl) !== TFL_ORDER_CONFIG.volumeMl ||
-      payload.currency !== 'VND') {
-    fail_('INVALID_PRODUCT', 'Sản phẩm không hợp lệ. Vui lòng tải lại trang.');
+  if (payload.currency !== 'VND' || typeof payload.offerId !== 'string' ||
+      !Object.prototype.hasOwnProperty.call(TFL_ORDER_CONFIG.offers, payload.offerId)) {
+    fail_('INVALID_OFFER', 'Gói sản phẩm không hợp lệ. Vui lòng chọn lại.');
   }
-  const quantity = Number(payload.quantity);
-  if (!Number.isInteger(quantity) ||
-      !Object.prototype.hasOwnProperty.call(TFL_ORDER_CONFIG.offers, quantity)) {
-    fail_('INVALID_QUANTITY', 'Vui lòng chọn một chai hoặc bộ hai chai.');
+  const offer = TFL_ORDER_CONFIG.offers[payload.offerId];
+  if (!Array.isArray(payload.items) || payload.items.length !== offer.skus.length) {
+    fail_('INVALID_PRODUCT', 'Danh sách sản phẩm không khớp gói đã chọn.');
   }
+  const suppliedSkus = [];
+  payload.items.forEach(function (item) {
+    if (!plainRecord_(item) || Object.keys(item).some(function (key) {
+      return ['sku', 'volumeMl', 'quantity'].indexOf(key) === -1;
+    }) || typeof item.sku !== 'string' || offer.skus.indexOf(item.sku) === -1 ||
+        suppliedSkus.indexOf(item.sku) !== -1 || item.volumeMl !== 50 || item.quantity !== 1) {
+      fail_('INVALID_PRODUCT', 'Sản phẩm, dung tích hoặc số lượng không hợp lệ.');
+    }
+    suppliedSkus.push(item.sku);
+  });
+  if (payload.quantity !== offer.skus.length) {
+    fail_('INVALID_QUANTITY', 'Tổng số chai không khớp gói đã chọn.');
+  }
+  const items = offer.skus.map(function (sku) {
+    const product = TFL_ORDER_CONFIG.products[sku];
+    return {
+      sku: sku, name: product.name, volumeMl: product.volumeMl,
+      quantity: 1, unitPrice: product.unitPrice, lineSubtotal: product.unitPrice
+    };
+  });
+  const retailSubtotal = items.reduce(function (sum, item) { return sum + item.lineSubtotal; }, 0);
+  const subtotal = retailSubtotal - offer.discount;
+  if (subtotal !== offer.subtotal || subtotal < 0) {
+    fail_('OFFER_CONFIGURATION', 'Cửa hàng cần kiểm tra lại cấu hình giá.');
+  }
+  const total = subtotal + offer.shipping;
+  const totals = {subtotal: subtotal, shipping: offer.shipping, total: total};
+  Object.keys(totals).forEach(function (key) {
+    // Require exact integer quotes but always calculate stored amounts here.
+    if (!Number.isSafeInteger(payload[key]) || payload[key] !== totals[key]) {
+      fail_('PRICE_CHANGED', 'Giá đơn hàng đã thay đổi. Vui lòng tải lại và chọn lại sản phẩm.');
+    }
+  });
   const customerName = boundedText_(payload.customerName, 2, 100, 'họ và tên', true);
   if (!/\p{L}/u.test(customerName)) fail_('INVALID_CUSTOMER', 'Họ và tên không hợp lệ.');
   const address = boundedText_(payload.address, 10, 350, 'địa chỉ nhận hàng', false);
@@ -138,28 +235,21 @@ function validateOrder_(payload) {
   if (!/^0[35789]\d{8}$/.test(phone)) {
     fail_('INVALID_PHONE', 'Vui lòng nhập số di động Việt Nam hợp lệ.');
   }
-  const offer = TFL_ORDER_CONFIG.offers[quantity];
+  if (payload.attribution != null && !plainRecord_(payload.attribution)) {
+    fail_('INVALID_REQUEST', 'Dữ liệu nguồn truy cập không hợp lệ.');
+  }
   const attribution = {};
-  const source = payload.attribution && typeof payload.attribution === 'object' &&
-    !Array.isArray(payload.attribution) ? payload.attribution : {};
+  const source = payload.attribution || {};
   ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'].forEach(function (key) {
-    attribution[key] = typeof source[key] === 'string' ?
-      cleanText_(source[key], true).slice(0, 200) : '';
+    attribution[key] = typeof source[key] === 'string' ? cleanText_(source[key], true).slice(0, 200) : '';
   });
   return {
-    idempotencyKey: payload.idempotencyKey.toLowerCase(),
-    product: TFL_ORDER_CONFIG.productName,
-    sku: TFL_ORDER_CONFIG.sku,
-    volumeMl: TFL_ORDER_CONFIG.volumeMl,
-    quantity: quantity,
-    subtotal: offer.subtotal,
-    shipping: offer.shipping,
-    total: offer.subtotal + offer.shipping,
-    currency: 'VND',
-    customerName: customerName,
-    phone: phone,
-    address: address,
-    note: note,
+    schemaVersion: 2, idempotencyKey: payload.idempotencyKey.toLowerCase(),
+    offerId: payload.offerId, offerName: offer.name, items: items,
+    quantity: items.length, totalVolumeMl: items.length * 50,
+    retailSubtotal: retailSubtotal, discount: offer.discount,
+    subtotal: subtotal, shipping: offer.shipping, total: total, currency: 'VND',
+    customerName: customerName, phone: phone, address: address, note: note,
     attribution: attribution
   };
 }
@@ -179,41 +269,55 @@ function saveOrder_(order, parentOrigin) {
         if (String(existing[3]) !== fingerprint) {
           fail_('REQUEST_CONFLICT', 'Yêu cầu này đã được dùng cho nội dung khác. Vui lòng tạo đơn mới.');
         }
-        if (!validUuid_(existing[1]) || Number(existing[8]) !== order.quantity ||
-            Number(existing[11]) !== order.total) {
+        if (!validUuid_(existing[1]) || Number(existing[5]) !== 2 ||
+            String(existing[6]) !== order.offerId || String(existing[8]) !== JSON.stringify(order.items) ||
+            Number(existing[11]) !== order.quantity || Number(existing[13]) !== order.retailSubtotal ||
+            Number(existing[14]) !== order.discount || Number(existing[15]) !== order.subtotal ||
+            Number(existing[16]) !== order.shipping || Number(existing[17]) !== order.total ||
+            String(existing[18]) !== 'VND') {
           fail_('ORDER_STATE_INVALID', 'Cửa hàng cần kiểm tra lại trạng thái yêu cầu này.');
         }
-        return {
-          success: true, orderId: String(existing[1]), quantity: Number(existing[8]),
-          total: Number(existing[11]), currency: 'VND', duplicate: true
-        };
+        // Retry may follow a failed flush, so require a successful flush before ACK.
+        SpreadsheetApp.flush();
+        return orderAck_(order, String(existing[1]), true);
       }
     }
     const orderId = Utilities.getUuid();
+    const whiteQuantity = order.items.filter(function (item) { return item.sku === 'TFL-540-BLANC-50'; }).length;
+    const redQuantity = order.items.filter(function (item) { return item.sku === 'TFL-540-ROUGE-50'; }).length;
     const row = [
       Utilities.formatDate(new Date(), TFL_ORDER_CONFIG.timezone, 'yyyy-MM-dd HH:mm:ss'),
-      orderId, order.idempotencyKey, fingerprint, 'Moi', order.product, order.sku,
-      order.volumeMl, order.quantity, order.subtotal, order.shipping, order.total,
-      order.currency, safeCell_(order.customerName), safeCell_(order.phone),
-      safeCell_(order.address), safeCell_(order.note),
+      orderId, order.idempotencyKey, fingerprint, 'Moi', 2,
+      order.offerId, order.offerName, JSON.stringify(order.items), whiteQuantity, redQuantity,
+      order.quantity, order.totalVolumeMl, order.retailSubtotal, order.discount,
+      order.subtotal, order.shipping, order.total, order.currency,
+      safeCell_(order.customerName), safeCell_(order.phone), safeCell_(order.address), safeCell_(order.note),
       safeCell_(order.attribution.utm_source), safeCell_(order.attribution.utm_medium),
       safeCell_(order.attribution.utm_campaign), safeCell_(order.attribution.utm_content),
       safeCell_(order.attribution.utm_term), allowedOrigin_(parentOrigin) ? parentOrigin : ''
     ];
     sheet.appendRow(row);
     SpreadsheetApp.flush();
-    return {
-      success: true, orderId: orderId, quantity: order.quantity, total: order.total,
-      currency: 'VND', duplicate: false
-    };
+    return orderAck_(order, orderId, false);
   } finally {
     lock.releaseLock();
   }
 }
 
+function orderAck_(order, orderId, duplicate) {
+  return {
+    success: true, version: 2, receiverVersion: 2, schemaVersion: 2, orderId: orderId,
+    offerId: order.offerId, items: order.items.map(function (item) {
+      return {sku: item.sku, volumeMl: item.volumeMl, quantity: item.quantity};
+    }),
+    quantity: order.quantity, subtotal: order.subtotal, shipping: order.shipping,
+    discount: order.discount, total: order.total, currency: 'VND', duplicate: duplicate
+  };
+}
+
 function orderSheet_() {
-  const properties = PropertiesService.getScriptProperties();
-  const configuredName = properties.getProperty('ORDER_SHEET_NAME');
+  // Do not reuse v1 ORDER_SHEET_NAME: v2 has a separate schema and worksheet.
+  const configuredName = PropertiesService.getScriptProperties().getProperty('ORDER_SHEET_NAME_V2');
   const name = configuredName ? configuredName.trim() : TFL_ORDER_CONFIG.sheetName;
   if (!name || name.length > 100 || /[\\/?*:[\]]/.test(name)) {
     fail_('SHEET_CONFIGURATION', 'Trang tính nhận đơn chưa được cấu hình đúng.');
@@ -241,11 +345,16 @@ function orderSheet_() {
 
 function orderFingerprint_(order) {
   const canonical = JSON.stringify([
-    order.sku, order.volumeMl, order.quantity, order.subtotal, order.shipping, order.total,
-    order.currency, order.customerName, order.phone, order.address, order.note
+    order.schemaVersion, order.offerId, order.items, order.quantity, order.retailSubtotal,
+    order.discount, order.subtotal, order.shipping, order.total, order.currency,
+    order.customerName, order.phone, order.address, order.note
   ]);
   return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, canonical, Utilities.Charset.UTF_8)
     .map(function (byte) { return ('0' + ((byte + 256) % 256).toString(16)).slice(-2); }).join('');
+}
+
+function plainRecord_(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
 function cleanText_(value, singleLine) {
@@ -263,23 +372,10 @@ function boundedText_(value, minimum, maximum, label, singleLine) {
   return text;
 }
 
-function safeCell_(value) {
-  return value ? "'" + String(value) : '';
-}
-
-function validUuid_(value) {
-  return typeof value === 'string' && TFL_UUID_PATTERN.test(value);
-}
-
-function allowedOrigin_(value) {
-  return TFL_ORDER_CONFIG.allowedOrigins.indexOf(value) !== -1;
-}
-
-function fail_(code, message) {
-  const error = new Error(message);
-  error.tflCode = code;
-  throw error;
-}
+function safeCell_(value) { return value ? "'" + String(value) : ''; }
+function validUuid_(value) { return typeof value === 'string' && TFL_UUID_PATTERN.test(value); }
+function allowedOrigin_(value) { return TFL_ORDER_CONFIG.allowedOrigins.indexOf(value) !== -1; }
+function fail_(code, message) { const error = new Error(message); error.tflCode = code; throw error; }
 
 function jsonResponse_(value) {
   return ContentService.createTextOutput(JSON.stringify(value)).setMimeType(ContentService.MimeType.JSON);

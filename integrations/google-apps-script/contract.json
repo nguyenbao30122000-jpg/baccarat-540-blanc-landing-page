@@ -1,0 +1,97 @@
+{
+  "contractVersion": 2,
+  "service": "TFL order receiver",
+  "status": "local-implementation-not-deployed",
+  "currency": "VND",
+  "health": {
+    "method": "GET",
+    "query": "action=health",
+    "requiredResponse": {
+      "success": true,
+      "schemaVersion": 2,
+      "receiverVersion": 2,
+      "currency": "VND"
+    },
+    "additionalResponseKeys": ["ok", "service", "version", "capabilities", "offers"]
+  },
+  "offers": {
+    "white": {
+      "offerId": "white",
+      "items": [{"sku": "TFL-540-BLANC-50", "volumeMl": 50, "quantity": 1}],
+      "quantity": 1,
+      "subtotal": 549000,
+      "shipping": 30000,
+      "total": 579000,
+      "discount": 0
+    },
+    "red": {
+      "offerId": "red",
+      "items": [{"sku": "TFL-540-ROUGE-50", "volumeMl": 50, "quantity": 1}],
+      "quantity": 1,
+      "subtotal": 549000,
+      "shipping": 30000,
+      "total": 579000,
+      "discount": 0
+    },
+    "duo": {
+      "offerId": "duo",
+      "items": [
+        {"sku": "TFL-540-BLANC-50", "volumeMl": 50, "quantity": 1},
+        {"sku": "TFL-540-ROUGE-50", "volumeMl": 50, "quantity": 1}
+      ],
+      "quantity": 2,
+      "subtotal": 998000,
+      "shipping": 0,
+      "total": 998000,
+      "discount": 100000
+    }
+  },
+  "payload": {
+    "required": ["schemaVersion", "offerId", "currency", "items", "quantity", "subtotal", "shipping", "total", "customerName", "phone", "address", "idempotencyKey"],
+    "optional": ["note", "attribution"],
+    "additionalProperties": false,
+    "schemaVersion": 2,
+    "currency": "VND",
+    "itemProperties": ["sku", "volumeMl", "quantity"],
+    "itemAdditionalProperties": false,
+    "integerMoney": true,
+    "serverCalculatesPrices": true,
+    "submittedPricesMustMatch": true,
+    "idempotencyKey": "UUID v4, same key for identical retry",
+    "bounds": {"customerName": [2, 100], "address": [10, 350], "note": [0, 250], "payloadCharsMax": 12000},
+    "phone": "Vietnam mobile number; +84 normalization supported",
+    "attributionKeys": ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"]
+  },
+  "appsScriptBridge": {
+    "method": "POST",
+    "formFields": ["payload", "responseMode", "parentOrigin", "requestId", "responseToken"],
+    "responseMode": "bridge",
+    "requestId": "payload.idempotencyKey",
+    "responseToken": "32-128 random URL-safe alphanumeric/underscore/hyphen characters",
+    "messageType": "tfl:order-result",
+    "acknowledgementOnlyAfterSuccessfulFlush": true,
+    "noSuccessFromIframeLoad": true
+  },
+  "successAck": {
+    "requiredKeys": ["type", "success", "schemaVersion", "receiverVersion", "requestId", "responseToken", "orderId", "offerId", "items", "quantity", "subtotal", "shipping", "discount", "total", "currency", "duplicate"],
+    "success": true,
+    "schemaVersion": 2,
+    "receiverVersion": 2,
+    "type": "tfl:order-result",
+    "noCustomerPii": true,
+    "confirms": "order request saved, not payment"
+  },
+  "failureAck": {
+    "success": false,
+    "keys": ["code", "message", "retryable"],
+    "retryableCodes": ["BUSY", "ORDER_SAVE_FAILED"]
+  },
+  "worksheet": "Don_hang_Web_v2",
+  "worksheetPropertyOverride": "ORDER_SHEET_NAME_V2",
+  "allowedOrigins": [
+    "https://thefragrancelabperfume.shop",
+    "https://www.thefragrancelabperfume.shop",
+    "https://nguyenbao30122000-jpg.github.io",
+    "https://the-fragrance-lab-duo-atelier.kh-ng-gian-l-3718.chatgpt.site"
+  ]
+}
