@@ -115,3 +115,6 @@ html:has(.tfl-tab-header .tfl-promo-clock){scroll-padding-top:172px}
 .tfl-wear-line .eyebrow{color:var(--accent);font-size:.68rem;letter-spacing:.1em}
 .tfl-wear-value{font-family:var(--serif);color:var(--wine);font-size:clamp(1.1rem,2.1vw,1.5rem);line-height:1.5;margin:5px 0 0}
 @media(max-width:680px){.order-form .offer-options{gap:5px}.order-form .offer-options>.offer-option>.offer-option-inner{padding:9px 3px;min-height:96px}.order-form .offer-options>.offer-option .radio-visual{top:5px;right:5px;width:10px;height:10px}.tfl-wear-line{padding:12px 14px}}
+
+/* Manufacturer-reported wear durations, supplied by the shop owner. */
+.tfl-wear-duration{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:8px}.tfl-wear-duration .tfl-wear-value{display:flex;flex-wrap:wrap;align-items:baseline;gap:5px;margin:0;line-height:1.5}.tfl-wear-duration .tfl-wear-value span{font-family:var(--sans);font-size:.86rem;color:var(--muted)}.tfl-wear-duration .tfl-wear-value strong{font-weight:600;white-space:nowrap}.tfl-wear-duration .tfl-wear-value+.tfl-wear-value{border-left:1px solid var(--line);padding-left:14px}@media(max-width:480px){.tfl-wear-duration{gap:10px}.tfl-wear-duration .tfl-wear-value{flex-direction:column;gap:2px}.tfl-wear-duration .tfl-wear-value+.tfl-wear-value{padding-left:10px}}

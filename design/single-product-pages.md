@@ -15,3 +15,6 @@ All savings callouts and unrelated Floral Citrus benchmark numbers removed from 
 
 ## Checkout alignment
 Remove the obsolete combo badge and its inherited 9px top margin in both placements of the single shared form. Three equal-width columns stretch to one height. Single labels use the same concise quantity/volume. Replace lengthy wear discussion with a single qualitative line; no unrelated product's hours are asserted for the store's perfume.
+
+## Wear duration update (2026-11-28)
+The store owner reports having checked directly with the manufacturer: 5–7 hours on skin and 10–14 hours on fabric. Display these supplied figures in both Pearl and Ruby product panels. This supersedes the earlier qualitative-only display; it does not represent independent testing by the website developer or borrowing figures from another product.
