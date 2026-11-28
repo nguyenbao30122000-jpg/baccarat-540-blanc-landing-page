@@ -52,7 +52,8 @@
     }
     if(navigate){
       const url = new URL(window.location.href);
-      url.searchParams.delete('tab');
+      if(name === 'duo') url.searchParams.delete('tab');
+      else url.searchParams.set('tab',name);
       url.hash = name;
       if(url.href !== window.location.href) window.history.pushState(null,'',url);
     }
@@ -60,7 +61,17 @@
     if(scroll) window.scrollTo({top:0,behavior:'auto'});
     return true;
   }
-  update(fromUrl(),{initial:true});
+  const initialTab=fromUrl();
+  update(initialTab,{initial:true});
+  // Keep the selected tab when a visitor opens a shared anchor such as #dat-hang.
+  // Existing UTM parameters remain unchanged; only a known edition is added.
+  if(initialTab!=='duo'){
+    const url=new URL(window.location.href);
+    if(url.searchParams.get('tab')!==initialTab){
+      url.searchParams.set('tab',initialTab);
+      window.history.replaceState(window.history.state,'',url);
+    }
+  }
   tabs.forEach((tab,index)=>{
     tab.addEventListener('click',()=>update(tab.dataset.productTab,{navigate:true,focus:true,scroll:true}));
     tab.addEventListener('keydown',event=>{
