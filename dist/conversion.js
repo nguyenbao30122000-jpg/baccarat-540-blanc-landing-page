@@ -8,26 +8,25 @@
   const clockLabel=document.getElementById('offer-clock-label');
   const bar=document.getElementById('offer-clock-bar');
   if(clock&&clockLabel&&bar){
-    let deadline=0;
-    let tickId;
+    const duration=869000;
+    const key='tfl:offer-reminder-end:v2';
+    const now=Date.now();
+    let deadline=Number(get(key));
+    if(!Number.isFinite(deadline)||deadline<=0||deadline>now+duration){
+      deadline=now+duration;
+      put(key,deadline);
+    }
+    let tickId=null;
     function tick(){
-      if(!deadline)return;
       const seconds=Math.max(0,Math.ceil((deadline-Date.now())/1000));
       clock.textContent=String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0');
       bar.dataset.expired=String(seconds===0);
-      clockLabel.textContent=seconds===0?'Ưu đãi đã kết thúc':'Ưu đãi kết thúc sau:';
-      if(seconds===0&&tickId){clearInterval(tickId);tickId=null;}
+      clockLabel.textContent=seconds===0?'Ưu đãi Tết':'Ưu đãi kết thúc sau:';
+      bar.hidden=false;
+      if(seconds===0&&tickId!==null){clearInterval(tickId);tickId=null;}
+      return seconds;
     }
-    function usePromotion(promotion){
-      if(!promotion||promotion.enforced!==true||typeof promotion.endsAt!=='string')return;
-      const end=Date.parse(promotion.endsAt);
-      if(!Number.isFinite(end))return;
-      deadline=end;bar.hidden=false;
-      if(tickId)clearInterval(tickId);
-      tickId=setInterval(tick,250);tick();
-    }
-    document.addEventListener('tfl:receiver_ready',event=>usePromotion(event.detail?.promotion));
-    usePromotion(window.TFL_RECEIVER_PROMOTION);
+    if(tick()>0)tickId=setInterval(tick,250);
     document.addEventListener('visibilitychange',tick);
   }
   const form=document.getElementById('order-form');
