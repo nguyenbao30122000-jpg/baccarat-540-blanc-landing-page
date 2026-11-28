@@ -1,0 +1,15 @@
+name: Verify new order receiver
+on:
+  push:
+    branches:
+      - 'qa/verify-new-receiver-20261128'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify health of deployment shown by shop owner
+        run: node qa/verify-new-receiver.cjs
