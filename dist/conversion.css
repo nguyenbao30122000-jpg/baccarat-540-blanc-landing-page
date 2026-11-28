@@ -94,3 +94,24 @@ html:has(.tfl-tab-header .tfl-promo-clock){scroll-padding-top:172px}
 
 /* Keep price presentation clean after removing savings callouts. */
 .tfl-panel .sp-pricebox>.button{margin-top:13px}.tfl-wear-simple h3{margin-bottom:5px}.tfl-wear-simple .tfl-wear-footnote{margin-top:8px;font-size:.72rem}.tfl-wear-simple .tfl-wear-footnote a{text-decoration:underline;text-underline-offset:3px}
+
+/* Align all three choices in both the checkout and the shared popup. */
+.order-form .offer-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch;gap:8px}
+.order-form .offer-options>.offer-option{display:flex;align-items:stretch;min-width:0;margin:0;padding:0}
+.order-form .offer-options>.combo-option{margin:0;padding:0}
+.order-form .offer-options>.offer-option>.offer-option-inner{
+  display:grid;flex:1;min-width:0;width:100%;height:auto;min-height:102px;box-sizing:border-box;
+  grid-template-columns:minmax(0,1fr);grid-template-rows:12px minmax(36px,auto) auto;
+  justify-items:center;align-content:center;align-items:center;gap:4px;padding:10px 4px;text-align:center
+}
+.order-form .offer-options>.offer-option .offer-dot{width:10px;height:10px;margin:0}
+.order-form .offer-options>.offer-option .offer-label{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:2px;width:100%;min-width:0;min-height:36px}
+.order-form .offer-options>.offer-option .offer-label strong{font-size:clamp(.72rem,2.4vw,.85rem);line-height:1.35;font-weight:600}
+.order-form .offer-options>.offer-option .offer-label small{font-size:clamp(.61rem,2vw,.7rem);line-height:1.35}
+.order-form .offer-options>.offer-option .offer-amount{align-items:center;white-space:nowrap}
+.order-form .offer-options>.offer-option .offer-amount strong{font-size:clamp(.78rem,2.6vw,.95rem);line-height:1.35}
+.order-form .offer-options>.offer-option .radio-visual{position:absolute;top:6px;right:6px;width:12px;height:12px}
+.tfl-wear-line{margin-top:18px;padding:16px 20px;border:1px solid var(--line);background:var(--paper)}
+.tfl-wear-line .eyebrow{color:var(--accent);font-size:.68rem;letter-spacing:.1em}
+.tfl-wear-value{font-family:var(--serif);color:var(--wine);font-size:clamp(1.1rem,2.1vw,1.5rem);line-height:1.5;margin:5px 0 0}
+@media(max-width:680px){.order-form .offer-options{gap:5px}.order-form .offer-options>.offer-option>.offer-option-inner{padding:9px 3px;min-height:96px}.order-form .offer-options>.offer-option .radio-visual{top:5px;right:5px;width:10px;height:10px}.tfl-wear-line{padding:12px 14px}}

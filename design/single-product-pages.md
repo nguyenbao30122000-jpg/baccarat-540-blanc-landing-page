@@ -12,3 +12,6 @@ Floral Citrus, https://tinhhoa.shop/products/floral-citrus, lists 4–6 hours on
 
 ## Clean retail presentation and conditional live mode
 All savings callouts and unrelated Floral Citrus benchmark numbers removed from retail pages. Original price strike-through and actual displayed totals retained. Manufacturer describes lasting sillage but does not publish comparable skin/fabric hour measurements; only concise qualitative wear copy remains. No simulated countdown/checkout language in public pages. The clock remains a reminder, not an enforced campaign expiry. Frontend is configured to request live orders but remains disabled unless receiver v2 health matches catalog; no preview order, fake ACK, or Lead is emitted. The automatic form popup requires an enabled submit button. Google deployment itself was not modified or verified.
+
+## Checkout alignment
+Remove the obsolete combo badge and its inherited 9px top margin in both placements of the single shared form. Three equal-width columns stretch to one height. Single labels use the same concise quantity/volume. Replace lengthy wear discussion with a single qualitative line; no unrelated product's hours are asserted for the store's perfume.
