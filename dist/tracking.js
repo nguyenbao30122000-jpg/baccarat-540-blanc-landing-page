@@ -44,7 +44,11 @@
   let analyticsReady = false;
   let pixelReady = false;
   const measurementId = typeof config.analyticsId === 'string' ? config.analyticsId.trim() : '';
-  const pixelId = typeof config.metaPixelId === 'string' ? config.metaPixelId.trim() : '';
+  const pixelIds = [...new Set([config.metaPixelId,
+    ...(Array.isArray(config.additionalMetaPixelIds) ? config.additionalMetaPixelIds : [])]
+    .filter((id) => typeof id === 'string')
+    .map((id) => id.trim())
+    .filter((id) => /^\d+$/.test(id)))];
 
   function ga(name, parameters) {
     if (!analyticsReady) return;
@@ -92,7 +96,7 @@
   }
 
   function startPixel() {
-    if (config.metaPixelEnabled === false || !/^\d+$/.test(pixelId) || sensitiveQuery) {
+    if (config.metaPixelEnabled === false || pixelIds.length === 0 || sensitiveQuery) {
       status('pixel', sensitiveQuery ? 'privacy-blocked' : 'disabled');
       return;
     }
@@ -108,8 +112,11 @@
       fbq.queue = [];
     }
     // No automatic form matching or customer data is supplied to the pixel.
-    window.fbq('set', 'autoConfig', false, pixelId);
-    window.fbq('init', pixelId);
+    for (const id of pixelIds) {
+      window.fbq('set', 'autoConfig', false, id);
+      window.fbq('init', id);
+    }
+    // Standard track/trackCustom calls are broadcast once to every initialized pixel.
     pixelReady = true;
     meta('PageView', {});
     const script = addScript('tfl-meta-pixel', 'https://connect.facebook.net/en_US/fbevents.js',

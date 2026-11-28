@@ -7,6 +7,7 @@ window.TFL_CONFIG = Object.freeze({
   trackingEnabled: true,
   analyticsId: 'G-YNKR6EDF5D',
   metaPixelId: '4503743036565644',
+  additionalMetaPixelIds: Object.freeze(['1879263766853839']),
   replayScriptUrl: 'https://tnano-session-replay.baovan-tnano.workers.dev/recorder/tnano-replay.js',
   replayEndpoint: 'https://tnano-session-replay.baovan-tnano.workers.dev',
   shopName: 'The Fragrance Lab',

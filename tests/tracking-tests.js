@@ -71,10 +71,21 @@ check(() => {
   assert.equal(page.meta('PageView').length, 1);
   assert.equal(page.ga('page_view')[0].page_location, 'https://www.thefragrancelabperfume.shop/');
   assert.equal(page.ga('page_view')[0].page_referrer, 'https://example.com/');
-  const pixelInit = Array.from(page.window.fbq.queue.find((args) => args[0] === 'init'));
-  assert.deepEqual(pixelInit, ['init', '4503743036565644']);
-  const autoConfig = Array.from(page.window.fbq.queue.find((args) => args[0] === 'set'));
-  assert.deepEqual(autoConfig, ['set', 'autoConfig', false, '4503743036565644']);
+  const pixelInits = plain(page.window.fbq.queue.filter((args) => args[0] === 'init').map((args) => Array.from(args)));
+  assert.deepEqual(pixelInits, [['init', '4503743036565644'], ['init', '1879263766853839']]);
+  const autoConfigs = plain(page.window.fbq.queue.filter((args) => args[0] === 'set').map((args) => Array.from(args)));
+  assert.deepEqual(autoConfigs, [['set', 'autoConfig', false, '4503743036565644'], ['set', 'autoConfig', false, '1879263766853839']]);
+  assert.equal(page.scripts.filter((script) => script.id === 'tfl-meta-pixel').length, 1);
+});
+
+check(() => {
+  const page = setup({config: {additionalMetaPixelIds: ['4503743036565644', '1879263766853839', ' invalid ', ' 1879263766853839 ']}});
+  assert.deepEqual(plain(page.window.fbq.queue.filter((args) => args[0] === 'init').map((args) => Array.from(args))),
+    [['init', '4503743036565644'], ['init', '1879263766853839']]);
+  assert.equal(page.meta('PageView').length, 1);
+  const disabled = setup({config: {metaPixelEnabled: false}});
+  assert.equal(disabled.meta('PageView').length, 0);
+  assert.equal(disabled.scripts.some((script) => script.id === 'tfl-meta-pixel'), false);
 });
 
 const privateFields = {customerName: 'Private Customer Test', phone: '0912345678',
