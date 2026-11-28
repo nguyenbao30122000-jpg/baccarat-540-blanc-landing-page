@@ -19,19 +19,19 @@ function shareMetadata(html) {
 for (const page of ['index.html', 'cam-on.html']) {
   const source = fs.readFileSync(path.join(root, 'dist', page), 'utf8');
   const versioned = source.replace(
-    /(href|src)="(assets\/fonts\/fonts\.css|assets\/favicon\.svg|styles\.css|single-product\.css|tabs\.css|thank-you\.css|config\.js|tracking\.js|tabs\.js|orders\.js|app\.js|receipt\.js|thank-you\.js)(?:\?v=[a-f0-9]+)?"/g,
+    /(href|src)="(assets\/fonts\/fonts\.css|assets\/favicon\.svg|styles\.css|single-product\.css|tabs\.css|conversion\.css|thank-you\.css|config\.js|tracking\.js|tabs\.js|conversion\.js|orders\.js|app\.js|receipt\.js|thank-you\.js)(?:\?v=[a-f0-9]+)?"/g,
     (_, attribute, asset) => {
       const version = createHash('sha256').update(fs.readFileSync(path.join(root, 'dist', asset))).digest('hex').slice(0, 12);
       return `${attribute}="${asset}?v=${version}"`;
     }
   );
   const html = versioned
-    .replace(/(href|src)="(assets\/[^\"]+|(?:styles\.css|single-product\.css|tabs\.css|thank-you\.css|config\.js|tracking\.js|tabs\.js|orders\.js|app\.js|receipt\.js|thank-you\.js)(?:\?v=[a-f0-9]+)?)"/g, '$1="dist/$2"')
+    .replace(/(href|src)="(assets\/[^\"]+|(?:styles\.css|single-product\.css|tabs\.css|conversion\.css|thank-you\.css|config\.js|tracking\.js|tabs\.js|conversion\.js|orders\.js|app\.js|receipt\.js|thank-you\.js)(?:\?v=[a-f0-9]+)?)"/g, '$1="dist/$2"')
     .replace('</head>', '<script>window.TFL_ASSET_BASE="dist/";</script>\n</head>');
   fs.writeFileSync(path.join(root, 'dist', page), versioned);
   fs.writeFileSync(path.join(root, page), html);
   const previewShare = shareMetadata(versioned)
-    .replace(/(href|src)="(assets\/[^\"]+|(?:styles\.css|single-product\.css|tabs\.css|thank-you\.css|config\.js|tracking\.js|tabs\.js|orders\.js|app\.js|receipt\.js|thank-you\.js)(?:\?v=[a-f0-9]+)?)"/g, '$1="../$2"')
+    .replace(/(href|src)="(assets\/[^\"]+|(?:styles\.css|single-product\.css|tabs\.css|conversion\.css|thank-you\.css|config\.js|tracking\.js|tabs\.js|conversion\.js|orders\.js|app\.js|receipt\.js|thank-you\.js)(?:\?v=[a-f0-9]+)?)"/g, '$1="../$2"')
     .replace('</head>', '<script>window.TFL_ASSET_BASE="../";</script>\n</head>');
   const publishedShare = shareMetadata(html)
     .replace(/(href|src)="dist\//g, '$1="../dist/')
