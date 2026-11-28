@@ -138,3 +138,7 @@ node receiver-test.js
 Bộ 19 kiểm tra dùng Node VM và giả lập Google Services trong bộ nhớ; không gọi mạng hay gửi đơn. Phạm vi gồm: health và ba bảng giá, SKU/dung tích/số lượng, giá bị sửa, dữ liệu sai, ACK không chứa thông tin khách, retry không trùng, xung đột request, dữ liệu cũ bị sai, khóa bận, flush thất bại, transport sai, origin Sites, trung hòa công thức, giữ nguyên 23 cột và hàng đơn cũ, dùng lại property/tab cũ, dữ liệu từng SKU đúng trong cột gốc và không ghi đè cột tùy chỉnh.
 
 Các kiểm tra này không thay thế kiểm chứng deployment thực tế, quyền Google Sheet, CORS/iframe trong trình duyệt hoặc việc đơn thật đến được người xử lý.
+
+
+## Cập nhật giao diện bán hàng
+Frontend hiện đặt mode live nhưng giữ khóa gửi đơn khi health chưa xác nhận receiver v2. Người vận hành vẫn cần thực hiện các bước triển khai Google ở trên và kiểm tra một đơn được phép. Không đổi URL endpoint, không bỏ xác thực ACK, không tự chuyển form sang receiver v1.

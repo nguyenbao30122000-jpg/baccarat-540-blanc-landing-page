@@ -118,14 +118,14 @@
 
     function submitLabel() {
       if (busy) return 'Đang gửi yêu cầu…';
-      if (!isLive) return 'Kiểm tra đơn hàng';
-      return healthReady ? 'Gửi yêu cầu đặt hàng' : 'Chưa thể nhận đơn trực tuyến';
+      if (!isLive) return 'Tạm ngưng nhận đơn';
+      return healthReady ? 'ĐẶT HÀNG NGAY' : 'Chưa thể nhận đơn trực tuyến';
     }
 
     function updateSubmit() {
       setText('submit-text', submitLabel());
       if (submitButton) {
-        submitButton.disabled = busy || (isLive && !healthReady);
+        submitButton.disabled = busy || !isLive || !healthReady;
         submitButton.setAttribute('aria-busy', busy ? 'true' : 'false');
       }
     }
@@ -146,11 +146,6 @@
       setText('order-total', money(offer.total));
       setText('sticky-name', offer.name);
       setText('sticky-price', money(offer.total));
-      const savings = byId('order-savings');
-      if (savings) {
-        savings.textContent = offer.savings ? 'Ưu đãi Tết: tiết kiệm ' + money(offer.savings) + ' so với giá niêm yết' : '';
-        savings.hidden = !offer.savings;
-      }
       const image = byId('order-image');
       if (image) { image.src = (root.TFL_ASSET_BASE || '') + offer.image; image.alt = offer.name; }
       if (announce) {
@@ -349,9 +344,7 @@
       }
       const offer = OFFERS[selected];
       if (!isLive) {
-        status('Đã kiểm tra thông tin trên bản xem trước. Chưa gửi đơn hàng.', 'preview');
-        showDialog('Kiểm tra đơn hàng',
-          'Đây là bản xem trước. Thông tin chỉ được kiểm tra trên trình duyệt; chưa gửi đến cửa hàng và chưa tạo đơn hàng.', offer, null, checked.value);
+        status('Hiện chưa thể nhận đơn trực tuyến. Vui lòng quay lại sau.', 'error');
         return;
       }
       if (!healthReady || !root.TFLOrders?.submit) {
@@ -429,7 +422,7 @@
     const checkoutNote = byId('checkout-note');
     const noteText = checkoutNote && (checkoutNote.querySelector('span') || checkoutNote);
     if (!isLive) {
-      if (noteText) noteText.textContent = 'Bản xem trước: bạn có thể kiểm tra lựa chọn và thông tin. Đơn hàng chưa được gửi đến cửa hàng.';
+      if (noteText) noteText.textContent = 'Hiện chưa thể nhận đơn trực tuyến. Vui lòng quay lại sau.';
       updateSubmit();
     } else {
       if (noteText) noteText.textContent = 'Gửi yêu cầu để cửa hàng liên hệ xác nhận sản phẩm, tổng tiền và địa chỉ giao hàng. Chỉ điền thông tin cần thiết cho đơn hàng.';
