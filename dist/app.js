@@ -269,7 +269,7 @@
       try { saved = root.TFLReceipt.save(root.sessionStorage, receipt); } catch (_) {}
       if (saved) {
         // Keep customer details in this tab's session, never in the URL or analytics.
-        const receiptPath = form.dataset.receiptUrl === '../ruby-pearl/cam-on.html' ? form.dataset.receiptUrl : 'cam-on.html';
+        const receiptPath = ['/ruby-pearl/cam-on.html', '../ruby-pearl/cam-on.html'].includes(form.dataset.receiptUrl) ? form.dataset.receiptUrl : 'cam-on.html';
         setTimeout(() => root.location.assign(new URL(receiptPath, root.location.href).href), 600);
       } else {
         status('Cửa hàng đã ghi nhận yêu cầu. Bạn không cần gửi lại.', 'success');

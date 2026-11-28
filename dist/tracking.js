@@ -17,11 +17,13 @@
   }
 
   const pageLocation = window.location.origin + window.location.pathname;
-  const productPage = document.body?.dataset?.product;
-  const pageTitle = isThankYouPage ? 'Cảm ơn bạn | The Fragrance Lab' :
-    productPage === 'white' ? 'Baccarat 540 Pearl (Trắng) | The Fragrance Lab' :
-    productPage === 'red' ? 'Baccarat 540 Ruby (Đỏ) | The Fragrance Lab' :
-    'Baccarat 540 Trắng & Đỏ | The Fragrance Lab';
+  function titleFor(product) {
+    return isThankYouPage ? 'Cảm ơn bạn | The Fragrance Lab' :
+      product === 'white' ? 'Baccarat 540 Pearl (Trắng) | The Fragrance Lab' :
+      product === 'red' ? 'Baccarat 540 Ruby (Đỏ) | The Fragrance Lab' :
+      'Baccarat 540 Trắng & Đỏ | The Fragrance Lab';
+  }
+  let pageTitle = titleFor(document.body?.dataset?.product);
   let pageReferrer = '';
   try { if (document.referrer) pageReferrer = new URL(document.referrer).origin + '/'; } catch (_) {}
   const query = new URLSearchParams(window.location.search);
@@ -163,6 +165,22 @@
     if (detail.userInitiated !== true) return;
     ga('select_offer', itemParameters(offer));
     meta('SelectOffer', pixelParameters(offer), true);
+  });
+
+  // A change of product tab is a real product view, not a new page load.
+  document.addEventListener('tfl:tab_selected', (event) => {
+    if (isThankYouPage) return;
+    const detail = event.detail || {};
+    const validTab = {duo:'duo',pearl:'white',ruby:'red'};
+    if (!Object.hasOwn(validTab, detail.tab) || validTab[detail.tab] !== detail.offerId) return;
+    const offer = offerFor(detail.offerId);
+    if (!offer) return;
+    selected = offer.id;
+    pageTitle = titleFor(offer.id);
+    viewedInitialOffer = true;
+    ga('select_product_tab', {...itemParameters(offer), product_tab:detail.tab});
+    ga('view_item', {...itemParameters(offer), product_tab:detail.tab});
+    meta('ViewContent', {...pixelParameters(offer), product_tab:detail.tab});
   });
 
   document.addEventListener('tfl:checkout_started', (event) => {
