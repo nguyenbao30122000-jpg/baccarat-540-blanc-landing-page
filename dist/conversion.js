@@ -1,8 +1,6 @@
 (() => {
   'use strict';
-  const DURATION_MS=869000;
   const POPUP_DELAY_MS=60000;
-  const TIMER_KEY='tfl:offer-reminder-end:v1';
   const POPUP_KEY='tfl:quick-order-seen:v1';
   const get=(key)=>{try{return window.sessionStorage.getItem(key)}catch(_){return null}};
   const put=(key,val)=>{try{window.sessionStorage.setItem(key,String(val))}catch(_){}};
@@ -10,41 +8,26 @@
   const clockLabel=document.getElementById('offer-clock-label');
   const bar=document.getElementById('offer-clock-bar');
   if(clock&&clockLabel&&bar){
-    let deadline=Number(get(TIMER_KEY));
-    const now=Date.now();
-    if(!Number.isFinite(deadline)||deadline<=0||deadline>now+DURATION_MS){
-      deadline=now+DURATION_MS;
-      put(TIMER_KEY,deadline);
-    }
-    let isCampaignDeadline=false;
+    let deadline=0;
     let tickId;
     function tick(){
+      if(!deadline)return;
       const seconds=Math.max(0,Math.ceil((deadline-Date.now())/1000));
       clock.textContent=String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0');
       bar.dataset.expired=String(seconds===0);
-      clockLabel.textContent=seconds===0?(isCampaignDeadline?'Ưu đãi đã kết thúc':'Ưu đãi Tết'):(isCampaignDeadline?'Ưu đãi kết thúc sau:':'Ưu đãi Tết · Thời gian chọn:');
-      clock.setAttribute('aria-label',isCampaignDeadline?'Thời gian còn lại của ưu đãi':'Thời gian chọn ưu đãi trong phiên');
+      clockLabel.textContent=seconds===0?'Ưu đãi đã kết thúc':'Ưu đãi kết thúc sau:';
       if(seconds===0&&tickId){clearInterval(tickId);tickId=null;}
-      return seconds;
     }
-    function runClock(){
-      if(tickId){clearInterval(tickId);tickId=null;}
-      if(tick()>0)tickId=setInterval(tick,250);
-    }
-    // The exact campaign-end copy is reserved for an authoritative, enforced deadline.
-    // No client-side session reminder is represented as a price expiration.
     function usePromotion(promotion){
       if(!promotion||promotion.enforced!==true||typeof promotion.endsAt!=='string')return;
       const end=Date.parse(promotion.endsAt);
       if(!Number.isFinite(end))return;
-      isCampaignDeadline=true;
-      deadline=end;
-      runClock();
+      deadline=end;bar.hidden=false;
+      if(tickId)clearInterval(tickId);
+      tickId=setInterval(tick,250);tick();
     }
     document.addEventListener('tfl:receiver_ready',event=>usePromotion(event.detail?.promotion));
     usePromotion(window.TFL_RECEIVER_PROMOTION);
-    bar.hidden=false;
-    runClock();
     document.addEventListener('visibilitychange',tick);
   }
   const form=document.getElementById('order-form');

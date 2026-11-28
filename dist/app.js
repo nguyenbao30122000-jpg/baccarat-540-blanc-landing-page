@@ -58,8 +58,9 @@
   }
 
   function validateAck(result, payload) {
-    return Boolean(result && result.success === true && result.schemaVersion === 2 &&
-      result.receiverVersion === 2 && typeof result.orderId === 'string' &&
+    return Boolean(result && result.success === true && ((result.schemaVersion === 2 && result.receiverVersion === 2) ||
+       (payload.offerId === 'white' && result.schemaVersion === 1 && result.receiverVersion === 1)) &&
+      typeof result.orderId === 'string' &&
       result.orderId.length > 0 && result.orderId.length <= 120 &&
       result.offerId === payload.offerId && result.currency === 'VND' &&
       result.quantity === payload.quantity && result.subtotal === payload.subtotal &&
@@ -97,7 +98,7 @@
     let selected = radios.find((radio) => radio.checked)?.value || 'duo';
     if (!OFFERS[selected]) selected = 'duo';
     let busy = false;
-    let healthReady = false;
+    let receiverHint = 0;
     let hadValidation = false;
     let attempt = null;
     let confirmation = null;
@@ -119,13 +120,13 @@
     function submitLabel() {
       if (busy) return 'Đang gửi yêu cầu…';
       if (!isLive) return 'Tạm ngưng nhận đơn';
-      return healthReady ? 'ĐẶT HÀNG NGAY' : 'Chưa thể nhận đơn trực tuyến';
+      return 'ĐẶT HÀNG NGAY';
     }
 
     function updateSubmit() {
       setText('submit-text', submitLabel());
       if (submitButton) {
-        submitButton.disabled = busy || !isLive || !healthReady;
+        submitButton.disabled = busy || !isLive;
         submitButton.setAttribute('aria-busy', busy ? 'true' : 'false');
       }
     }
@@ -222,10 +223,10 @@
     }
     inputs.forEach((input) => input.addEventListener('input', () => {
       if (hadValidation) paintErrors(validateCustomer(readCustomer()).errors);
-      if (!busy && (!isLive || healthReady)) status('');
+      if (!busy) status('');
     }));
     form.addEventListener('focusin', (event) => {
-      if (event.isTrusted && isLive && healthReady && inputs.includes(event.target)) {
+      if (event.isTrusted && isLive && inputs.includes(event.target)) {
         emitTracking('tfl:checkout_started', {offerId: selected, ready: true});
       }
     });
@@ -303,36 +304,27 @@
     }
 
     async function healthCheck() {
-      healthReady = false;
-      updateSubmit();
+      // Advisory only. A failed GET/CORS must not prevent a real order submission.
       if (!isLive) return;
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), Math.min(config.orderTimeoutMs || 30000, 15000));
+      const timeout = setTimeout(() => controller.abort(), 15000);
       try {
-        if (config.receiverVersion !== 2 || config.orderTransport !== 'apps-script') throw new Error('receiver_not_ready');
         const url = new URL(config.orderEndpoint);
         if (url.origin !== 'https://script.google.com' ||
-          !/^\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(url.pathname) || url.search || url.hash) {
-          throw new Error('invalid_endpoint');
-        }
+          !/^\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(url.pathname) || url.search || url.hash) return;
         url.searchParams.set('action', 'health');
-        const response = await fetch(url.href, {method: 'GET', credentials: 'omit',
-          cache: 'no-store', signal: controller.signal});
+        const response = await fetch(url.href, {method: 'GET', credentials: 'omit', cache: 'no-store', signal: controller.signal});
         const health = response.ok ? await response.json() : null;
-        if (!validateHealth(health)) throw new Error('receiver_not_ready');
-        healthReady = true;
-        // Optional, authoritative promotion timing; no customer data is included.
-        if (health.promotion?.enforced === true && typeof health.promotion.endsAt === 'string') {
-          root.TFL_RECEIVER_PROMOTION = {enforced: true, endsAt: health.promotion.endsAt};
-          document.dispatchEvent(new CustomEvent('tfl:receiver_ready', {detail: {promotion: root.TFL_RECEIVER_PROMOTION}}));
-        }
-        status('');
+        if (validateHealth(health)) {
+          receiverHint = 2;
+          if (health.promotion?.enforced === true && typeof health.promotion.endsAt === 'string') {
+            root.TFL_RECEIVER_PROMOTION = {enforced: true, endsAt: health.promotion.endsAt};
+            emitTracking('tfl:receiver_ready', {promotion: root.TFL_RECEIVER_PROMOTION});
+          }
+        } else if (health?.ok === true && health.version === 1 && health.service === 'TFL order receiver') receiverHint = 1;
       } catch (_) {
-        status('Hệ thống nhận đơn đang được cập nhật. Bạn vui lòng quay lại sau.', 'error');
-      } finally {
-        clearTimeout(timeout);
-        updateSubmit();
-      }
+        // No pre-submit error; the actual POST and verified ACK determine success.
+      } finally { clearTimeout(timeout); }
     }
 
     form.addEventListener('submit', async (event) => {
@@ -353,7 +345,7 @@
         status('Hiện chưa thể nhận đơn trực tuyến. Vui lòng quay lại sau.', 'error');
         return;
       }
-      if (!healthReady || !root.TFLOrders?.submit) {
+      if (!root.TFLOrders?.submit) {
         status('Hệ thống nhận đơn chưa sẵn sàng. Vui lòng liên hệ cửa hàng.', 'error');
         return;
       }
@@ -373,13 +365,13 @@
         const payload = buildPayload(selected, checked.value, attempt.key, attribution());
         const result = await root.TFLOrders.submit(payload, {
           endpoint: config.orderEndpoint, transport: config.orderTransport,
-          timeoutMs: config.orderTimeoutMs || 30000
+          timeoutMs: config.orderTimeoutMs || 30000, receiverHint
         });
         if (!validateAck(result, payload)) throw new Error('unconfirmed');
         const receipt = root.TFLReceipt.create(payload, result);
         confirmation = {fingerprint, orderId: result.orderId, receipt};
         emitTracking('tfl:order_received', {offerId: payload.offerId, orderId: result.orderId,
-          acknowledged: true, schemaVersion: 2, receiverVersion: 2});
+          acknowledged: true, schemaVersion: result.schemaVersion, receiverVersion: result.receiverVersion});
         showConfirmation(offer, receipt);
       } catch (error) {
         const uncertain = error?.name === 'TimeoutError' || error?.name === 'AbortError' ||

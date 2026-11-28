@@ -196,12 +196,13 @@
   document.addEventListener('tfl:order_received', (event) => {
     const detail = event.detail || {};
     if (isThankYouPage || config.mode !== 'live' || detail.acknowledged !== true ||
-        detail.schemaVersion !== 2 || detail.receiverVersion !== 2 ||
+        !((detail.schemaVersion === 2 && detail.receiverVersion === 2) ||
+          (detail.offerId === 'white' && detail.schemaVersion === 1 && detail.receiverVersion === 1)) ||
         typeof detail.orderId !== 'string' || !detail.orderId.trim() || detail.orderId.length > 120 ||
         receivedOrders.has(detail.orderId)) return;
     const offer = offerFor(detail.offerId);
     if (!offer) return;
-    // app.js dispatches only after validating the server's complete v2 ACK.
+    // app.js dispatches only after validating the server's complete ACK.
     // The order ID remains in memory for deduplication and is never sent to analytics.
     receivedOrders.add(detail.orderId);
     ga('generate_lead', {...itemParameters(offer), lead_source: 'website_order_form'});

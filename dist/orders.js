@@ -52,7 +52,27 @@
       result.currency === 'VND';
   }
 
-  function submitAppsScript(payload, options) {
+  function legacyWhitePayload(payload) {
+    if (payload.offerId !== 'white' || payload.quantity !== 1 || payload.subtotal !== 549000 ||
+        payload.shipping !== 30000 || payload.total !== 579000 || payload.currency !== 'VND' ||
+        !Array.isArray(payload.items) || payload.items.length !== 1 ||
+        payload.items[0].sku !== 'TFL-540-BLANC-50' ||
+        payload.items[0].quantity !== 1 || payload.items[0].volumeMl !== 50) throw new Error('legacy_offer_unsupported');
+    return {sku:'TFL-540-BLANC-50',volumeMl:50,quantity:1,currency:'VND',
+      customerName:payload.customerName,phone:payload.phone,address:payload.address,note:payload.note,
+      idempotencyKey:payload.idempotencyKey,attribution:payload.attribution};
+  }
+
+  function legacyWhiteAck(result, payload) {
+    if (payload.offerId !== 'white' || !result || result.success !== true ||
+        typeof result.orderId !== 'string' || !result.orderId.trim() || result.orderId.length > 120 ||
+        result.quantity !== 1 || result.total !== 579000 || result.currency !== 'VND' ||
+        (result.receiverVersion !== undefined && result.receiverVersion !== 1) ||
+        (result.schemaVersion !== undefined && result.schemaVersion !== 1)) return null;
+    return {...result, schemaVersion:1, receiverVersion:1, offerId:'white', subtotal:549000, shipping:30000};
+  }
+
+  function submitAppsScript(payload, options, legacy = false) {
     const endpoint = new URL(options.endpoint);
     if (endpoint.origin !== 'https://script.google.com' ||
         !/^\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(endpoint.pathname) ||
@@ -79,7 +99,7 @@
       postForm.className = 'rr-block';
       postForm.setAttribute('data-private', 'true');
       const values = {
-        payload: JSON.stringify(payload),
+        payload: JSON.stringify(legacy ? legacyWhitePayload(payload) : payload),
         responseMode: 'bridge',
         parentOrigin: window.location.origin,
         requestId: payload.idempotencyKey,
@@ -110,13 +130,14 @@
         if (!result || result.type !== 'tfl:order-result' ||
             result.requestId !== payload.idempotencyKey ||
             result.responseToken !== responseToken) return;
-        if (!validResult(result, payload)) {
+        const confirmed = legacy ? legacyWhiteAck(result,payload) : (validResult(result,payload) ? result : null);
+        if (!confirmed) {
           const error = new Error('order_rejected');
           error.code = typeof result.code === 'string' ? result.code : 'unconfirmed';
           finish(error);
           return;
         }
-        finish(null, result);
+        finish(null, confirmed);
       }
       window.addEventListener('message', receive);
       timeout = setTimeout(() => {
@@ -153,13 +174,21 @@
     }
   }
 
-  function submit(payload, options) {
+  async function submit(payload, options) {
     if (!options || !/^https:\/\//.test(options.endpoint || '')) {
       return Promise.reject(new Error('missing_endpoint'));
     }
-    return options.transport === 'apps-script'
-      ? submitAppsScript(payload, options)
-      : submitJson(payload, options);
+    if (options.transport !== 'apps-script') return submitJson(payload, options);
+    // The legacy receiver only writes the white SKU. Never disguise Ruby or duo.
+    if (options.receiverHint === 1 && payload.offerId === 'white') return submitAppsScript(payload, options, true);
+    try {
+      return await submitAppsScript(payload, options);
+    } catch (error) {
+      // Retry legacy format only after an explicit pre-storage rejection, never a timeout.
+      if (payload.offerId === 'white' && options.receiverHint !== 2 &&
+          error.code === 'INVALID_PRODUCT') return submitAppsScript(payload, options, true);
+      throw error;
+    }
   }
 
   window.TFLOrders = Object.freeze({submit, randomId});

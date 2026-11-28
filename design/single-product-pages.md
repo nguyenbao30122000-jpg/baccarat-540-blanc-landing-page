@@ -18,3 +18,6 @@ Remove the obsolete combo badge and its inherited 9px top margin in both placeme
 
 ## Wear duration update (2026-11-28)
 The store owner reports having checked directly with the manufacturer: 5–7 hours on skin and 10–14 hours on fabric. Display these supplied figures in both Pearl and Ruby product panels. This supersedes the earlier qualitative-only display; it does not represent independent testing by the website developer or borrowing figures from another product.
+
+## Checkout recovery
+Live checkout remains enabled regardless of health GET. Existing endpoint and strict ACK validation remain. Optional v1 fallback accepts only single Pearl, using the original SKU and verified v1 ACK, on known v1 or explicit INVALID_PRODUCT rejection; no retry on unknown outcome. Ruby and duo retain exact v2 payload. Google deployment could not be verified. The unwanted timer wording is removed, and the exact expiry label is shown only with an authoritative enforced end. Tet banner and catalog are unchanged.

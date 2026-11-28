@@ -269,6 +269,7 @@ async function submitInertForm(options = {}) {
         submitted += 1;
         if (!options.live) throw new Error('Preview cannot submit');
         submittedPayload = clone(payload);
+        if (options.reject) { throw new Error('order_rejected'); }
         if (options.timeout) {
           const error = new Error('confirmation_timeout');
           error.name = 'TimeoutError';
@@ -285,6 +286,7 @@ async function submitInertForm(options = {}) {
     clearTimeout(id) { timers.delete(id); },
     CustomEvent: class { constructor(type, init) { this.type = type; this.detail = init.detail; } },
     async fetch(url, init) {
+      if (options.healthError) throw new Error('NetworkError');
       if (!options.live) throw new Error('Preview cannot call the receiver');
       assert.equal(init.method, 'GET');
       assert.equal(new URL(url).searchParams.get('action'), 'health');
@@ -295,7 +297,7 @@ async function submitInertForm(options = {}) {
   // Model a user submitting only after health enables the button. Cross-realm
   // promise assimilation takes several microtasks; no real clock or request runs.
   for (let index = 0; index < 30 && ids.get('submit-order').disabled; index += 1) await Promise.resolve();
-  assert.equal(ids.get('submit-order').disabled, !options.live || options.healthVersion === 1, 'Only the valid live receiver enables checkout');
+  assert.equal(ids.get('submit-order').disabled, !options.live, 'Live checkout remains enabled independently of health');
   await form.listeners.submit({preventDefault() {}});
   const runRedirects = () => {
     for (const [id, timer] of timers) {
@@ -317,13 +319,23 @@ async function checkApplicationFlow() {
     assert.equal(preview.ids.get('form-status').dataset.state, 'error');
     assert.equal(Boolean(preview.ids.get('order-dialog').open), false);
   });
-  const legacy = await submitInertForm({live: true, healthVersion: 1});
-  check('receiver v1 remains blocked in live configuration', () => {
-    assert.equal(legacy.submitted, 0);
-    assert.equal(legacy.ids.get('submit-order').disabled, true);
-    assert.equal(legacy.storage.getItem(api.storageKey), null);
-    assert.deepEqual(legacy.navigations, []);
-    assert.equal(legacy.events.some(event => event.type === 'tfl:order_received'), false);
+  const legacy = await submitInertForm({live:true,healthVersion:1,reject:true});
+  check('receiver rejection happens after submission, not a preflight lock',()=>{
+    assert.equal(legacy.submitted,1);
+    assert.equal(legacy.ids.get('submit-order').disabled,false);
+    assert.equal(legacy.storage.getItem(api.storageKey),null);
+    assert.deepEqual(legacy.navigations,[]);
+    assert.equal(legacy.events.some(event=>event.type==='tfl:order_received'),false);
+  });
+  const network=await submitInertForm({live:true,healthError:true});
+  check('failed advisory GET does not prevent a valid POST and receipt',()=>{
+    assert.equal(network.submitted,1);
+    assert.equal(api.read(network.storage).state,'confirmed');
+  });
+  const whiteV1=await submitInertForm({live:true,offerId:'white',healthVersion:1,badAck:{schemaVersion:1,receiverVersion:1}});
+  check('confirmed old white receipt is supported',()=>{
+    assert.equal(api.read(whiteV1.storage).state,'confirmed');
+    assert.equal(api.read(whiteV1.storage).receipt.receiverVersion,1);
   });
   for (const offerId of ['white', 'red', 'duo']) {
     const live = await submitInertForm({live: true, offerId});

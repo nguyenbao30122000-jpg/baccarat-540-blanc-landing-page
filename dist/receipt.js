@@ -15,8 +15,10 @@
     const app = root.TFLApp;
     if (!app || !receipt || typeof receipt !== 'object' || Array.isArray(receipt)) return false;
     const offer = app.offers[receipt.offerId];
-    if (!offer || receipt.receiptVersion !== 1 || receipt.schemaVersion !== 2 ||
-        receipt.receiverVersion !== 2 || receipt.currency !== 'VND' ||
+    if (!offer || receipt.receiptVersion !== 1 ||
+        !((receipt.schemaVersion === 2 && receipt.receiverVersion === 2) ||
+          (receipt.offerId === 'white' && receipt.schemaVersion === 1 && receipt.receiverVersion === 1)) ||
+        receipt.currency !== 'VND' ||
         typeof receipt.orderId !== 'string' || !receipt.orderId.trim() ||
         receipt.orderId.length > 120 || /[\u0000-\u001f\u007f]/.test(receipt.orderId) ||
         receipt.quantity !== offer.quantity || receipt.subtotal !== offer.subtotal ||
@@ -36,7 +38,7 @@
     const customer = app.validateCustomer(payload);
     if (!customer.valid) throw new Error('invalid_receipt_customer');
     const receipt = {
-      receiptVersion: 1, schemaVersion: 2, receiverVersion: 2,
+      receiptVersion: 1, schemaVersion: result.schemaVersion, receiverVersion: result.receiverVersion,
       orderId: result.orderId, offerId: offer.id,
       items: offer.items.map((item) => ({...item})), quantity: offer.quantity,
       subtotal: offer.subtotal, shipping: offer.shipping, total: offer.total,
