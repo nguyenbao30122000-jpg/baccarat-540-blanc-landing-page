@@ -1,0 +1,17 @@
+name: One-time live checkout test
+on:
+  push:
+    branches:
+      - 'qa/live-checkout-20261128-1142'
+permissions:
+  contents: read
+jobs:
+  live-checkout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install browser test tool
+        run: npm install --no-save --no-package-lock playwright@1.56.1
+      - name: Check all six live checkout paths
+        run: node qa/live-checkout-test.cjs
