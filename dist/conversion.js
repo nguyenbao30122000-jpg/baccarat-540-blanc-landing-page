@@ -10,6 +10,11 @@
   const clockLabel=document.getElementById('offer-clock-label');
   const bar=document.getElementById('offer-clock-bar');
   if(clock&&clockLabel&&bar){
+    const preview = window.TFL_CONFIG?.mode !== 'live';
+    const previewLabel = document.getElementById('offer-clock-preview');
+    clockLabel.textContent = preview ? 'CHƯƠNG TRÌNH KẾT THÚC SAU:' : 'THỜI GIAN NHẮC ƯU ĐÃI CÒN LẠI:';
+    if(previewLabel) previewLabel.hidden = !preview;
+    clock.setAttribute('aria-label', preview ? 'Thời gian đếm ngược mô phỏng' : 'Thời gian nhắc ưu đãi còn lại');
     bar.hidden=false;
     const now=Date.now();
     let deadline=Number(get(TIMER_KEY));
@@ -23,7 +28,7 @@
       clock.textContent=String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0');
       if(seconds===0){
         bar.dataset.expired='true';
-        clockLabel.textContent='Đã hết thời gian nhắc ưu đãi · Xem giá hiện hành';
+        clockLabel.textContent=preview?'Đã hết thời gian mô phỏng · Xem giá hiện hành':'Đã hết thời gian nhắc ưu đãi · Xem giá hiện hành';
         if(tickId) clearInterval(tickId);
       }
       return seconds;
