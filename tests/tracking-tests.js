@@ -63,7 +63,7 @@ check(() => {
 check(() => {
   const page = setup({url: 'https://www.thefragrancelabperfume.shop/?utm_source=facebook&utm_campaign=duo#dat-hang'});
   page.repeat();
-  assert.equal(page.window.TFL_CONFIG.mode, 'preview');
+  assert.equal(page.window.TFL_CONFIG.mode, 'live');
   assert.equal(page.window.TFL_CONFIG.analyticsId, 'G-YNKR6EDF5D');
   assert.equal(page.window.TFL_CONFIG.metaPixelId, '4503743036565644');
   assert.equal(page.scripts.length, 3);
@@ -110,7 +110,7 @@ check(() => {
 const accepted = {offerId: 'duo', orderId: 'TFL-TEST-ACK-ONLY', acknowledged: true,
   schemaVersion: 2, receiverVersion: 2};
 check(() => {
-  const page = setup();
+  const page = setup({config: {mode: 'preview'}});
   page.emit('tfl:checkout_started', {offerId: 'duo', ready: true});
   page.emit('tfl:order_received', accepted);
   assert.equal(page.ga('begin_checkout').length, 0);

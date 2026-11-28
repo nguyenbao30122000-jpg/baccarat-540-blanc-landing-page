@@ -289,13 +289,13 @@ async function submitInertForm(options = {}) {
       assert.equal(init.method, 'GET');
       assert.equal(new URL(url).searchParams.get('action'), 'health');
       return {ok: true, async json() {
-        return {success: true, schemaVersion: 2, receiverVersion: 2, currency: 'VND', offers: app.offers};
+        return {success: true, schemaVersion: options.healthVersion || 2, receiverVersion: options.healthVersion || 2, currency: 'VND', offers: app.offers};
       }};
     }});
   // Model a user submitting only after health enables the button. Cross-realm
   // promise assimilation takes several microtasks; no real clock or request runs.
   for (let index = 0; index < 30 && ids.get('submit-order').disabled; index += 1) await Promise.resolve();
-  assert.equal(ids.get('submit-order').disabled, false, 'The mocked valid receiver must enable checkout');
+  assert.equal(ids.get('submit-order').disabled, !options.live || options.healthVersion === 1, 'Only the valid live receiver enables checkout');
   await form.listeners.submit({preventDefault() {}});
   const runRedirects = () => {
     for (const [id, timer] of timers) {
@@ -309,13 +309,21 @@ async function submitInertForm(options = {}) {
 
 async function checkApplicationFlow() {
   const preview = await submitInertForm();
-  check('preview can summarize the order without persistence, redirect or confirmed conversion', () => {
+  check('disabled mode cannot submit, confirm or redirect', () => {
     assert.equal(preview.submitted, 0);
     assert.equal(preview.storage.getItem(api.storageKey), null);
     assert.deepEqual(preview.navigations, []);
     assert.equal(preview.events.some((event) => event.type === 'tfl:order_received'), false);
-    assert.equal(preview.ids.get('form-status').dataset.state, 'preview');
-    assert.equal(preview.ids.get('order-dialog').open, true);
+    assert.equal(preview.ids.get('form-status').dataset.state, 'error');
+    assert.equal(Boolean(preview.ids.get('order-dialog').open), false);
+  });
+  const legacy = await submitInertForm({live: true, healthVersion: 1});
+  check('receiver v1 remains blocked in live configuration', () => {
+    assert.equal(legacy.submitted, 0);
+    assert.equal(legacy.ids.get('submit-order').disabled, true);
+    assert.equal(legacy.storage.getItem(api.storageKey), null);
+    assert.deepEqual(legacy.navigations, []);
+    assert.equal(legacy.events.some(event => event.type === 'tfl:order_received'), false);
   });
   for (const offerId of ['white', 'red', 'duo']) {
     const live = await submitInertForm({live: true, offerId});
