@@ -131,7 +131,7 @@
     }
 
     function selectOffer(id, announce = false, userInitiated = false) {
-      if (!OFFERS[id] || busy) return;
+      if (!OFFERS[id] || busy || !radios.some((radio) => radio.value === id)) return;
       selected = id;
       const offer = OFFERS[id];
       radios.forEach((radio) => { radio.checked = radio.value === id; });
@@ -269,7 +269,8 @@
       try { saved = root.TFLReceipt.save(root.sessionStorage, receipt); } catch (_) {}
       if (saved) {
         // Keep customer details in this tab's session, never in the URL or analytics.
-        setTimeout(() => root.location.assign(new URL('cam-on.html', root.location.href).href), 600);
+        const receiptPath = form.dataset.receiptUrl === '../ruby-pearl/cam-on.html' ? form.dataset.receiptUrl : 'cam-on.html';
+        setTimeout(() => root.location.assign(new URL(receiptPath, root.location.href).href), 600);
       } else {
         status('Cửa hàng đã ghi nhận yêu cầu. Bạn không cần gửi lại.', 'success');
         showDialog('Đã nhận yêu cầu của bạn',

@@ -17,7 +17,11 @@
   }
 
   const pageLocation = window.location.origin + window.location.pathname;
-  const pageTitle = isThankYouPage ? 'Cảm ơn bạn | The Fragrance Lab' : 'Baccarat 540 Trắng & Đỏ | The Fragrance Lab';
+  const productPage = document.body?.dataset?.product;
+  const pageTitle = isThankYouPage ? 'Cảm ơn bạn | The Fragrance Lab' :
+    productPage === 'white' ? 'Baccarat 540 Pearl (Trắng) | The Fragrance Lab' :
+    productPage === 'red' ? 'Baccarat 540 Ruby (Đỏ) | The Fragrance Lab' :
+    'Baccarat 540 Trắng & Đỏ | The Fragrance Lab';
   let pageReferrer = '';
   try { if (document.referrer) pageReferrer = new URL(document.referrer).origin + '/'; } catch (_) {}
   const query = new URLSearchParams(window.location.search);

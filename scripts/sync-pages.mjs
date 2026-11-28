@@ -45,3 +45,19 @@ for (const page of ['index.html', 'cam-on.html']) {
   }
 }
 console.log('Versioned assets and synchronized storefront, sharing and thank-you pages.');
+
+for (const edition of ['pearl','ruby']) {
+  const sourcePath = path.join(root,'dist',edition,'index.html');
+  const source = fs.readFileSync(sourcePath,'utf8');
+  const versioned = source.replace(/(href|src)="\.\.\/(assets\/fonts\/fonts\.css|assets\/favicon\.svg|styles\.css|single-product\.css|config\.js|tracking\.js|orders\.js|app\.js|receipt\.js)(?:\?v=[a-f0-9]+)?"/g,
+    (_, attribute, asset) => {
+      const version = createHash('sha256').update(fs.readFileSync(path.join(root,'dist',asset))).digest('hex').slice(0,12);
+      return `${attribute}="../${asset}?v=${version}"`;
+    });
+  fs.writeFileSync(sourcePath,versioned);
+  const published = versioned.replace(/(href|src)="\.\.\/(assets\/[^"]+|(?:styles\.css|single-product\.css|config\.js|tracking\.js|orders\.js|app\.js|receipt\.js)(?:\?v=[a-f0-9]+)?)"/g,'$1="../dist/$2"')
+    .replace('window.TFL_ASSET_BASE="../"','window.TFL_ASSET_BASE="../dist/"');
+  fs.mkdirSync(path.join(root,edition),{recursive:true});
+  fs.writeFileSync(path.join(root,edition,'index.html'),published);
+}
+console.log('Synchronized Pearl and Ruby product pages.');
