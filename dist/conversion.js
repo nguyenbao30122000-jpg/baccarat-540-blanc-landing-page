@@ -10,27 +10,41 @@
   const clockLabel=document.getElementById('offer-clock-label');
   const bar=document.getElementById('offer-clock-bar');
   if(clock&&clockLabel&&bar){
-    clockLabel.textContent = 'THỜI GIAN NHẮC ƯU ĐÃI:';
-    clock.setAttribute('aria-label','Thời gian nhắc ưu đãi còn lại');
-    bar.hidden=false;
-    const now=Date.now();
     let deadline=Number(get(TIMER_KEY));
+    const now=Date.now();
     if(!Number.isFinite(deadline)||deadline<=0||deadline>now+DURATION_MS){
       deadline=now+DURATION_MS;
       put(TIMER_KEY,deadline);
     }
+    let isCampaignDeadline=false;
     let tickId;
     function tick(){
       const seconds=Math.max(0,Math.ceil((deadline-Date.now())/1000));
       clock.textContent=String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0');
-      if(seconds===0){
-        bar.dataset.expired='true';
-        clockLabel.textContent='Xem ưu đãi hiện hành';
-        if(tickId) clearInterval(tickId);
-      }
+      bar.dataset.expired=String(seconds===0);
+      clockLabel.textContent=seconds===0?(isCampaignDeadline?'Ưu đãi đã kết thúc':'Ưu đãi Tết'):(isCampaignDeadline?'Ưu đãi kết thúc sau:':'Ưu đãi Tết · Thời gian chọn:');
+      clock.setAttribute('aria-label',isCampaignDeadline?'Thời gian còn lại của ưu đãi':'Thời gian chọn ưu đãi trong phiên');
+      if(seconds===0&&tickId){clearInterval(tickId);tickId=null;}
       return seconds;
     }
-    if(tick()>0) tickId=setInterval(tick,250);
+    function runClock(){
+      if(tickId){clearInterval(tickId);tickId=null;}
+      if(tick()>0)tickId=setInterval(tick,250);
+    }
+    // The exact campaign-end copy is reserved for an authoritative, enforced deadline.
+    // No client-side session reminder is represented as a price expiration.
+    function usePromotion(promotion){
+      if(!promotion||promotion.enforced!==true||typeof promotion.endsAt!=='string')return;
+      const end=Date.parse(promotion.endsAt);
+      if(!Number.isFinite(end))return;
+      isCampaignDeadline=true;
+      deadline=end;
+      runClock();
+    }
+    document.addEventListener('tfl:receiver_ready',event=>usePromotion(event.detail?.promotion));
+    usePromotion(window.TFL_RECEIVER_PROMOTION);
+    bar.hidden=false;
+    runClock();
     document.addEventListener('visibilitychange',tick);
   }
   const form=document.getElementById('order-form');

@@ -318,8 +318,14 @@
         url.searchParams.set('action', 'health');
         const response = await fetch(url.href, {method: 'GET', credentials: 'omit',
           cache: 'no-store', signal: controller.signal});
-        if (!response.ok || !validateHealth(await response.json())) throw new Error('receiver_not_ready');
+        const health = response.ok ? await response.json() : null;
+        if (!validateHealth(health)) throw new Error('receiver_not_ready');
         healthReady = true;
+        // Optional, authoritative promotion timing; no customer data is included.
+        if (health.promotion?.enforced === true && typeof health.promotion.endsAt === 'string') {
+          root.TFL_RECEIVER_PROMOTION = {enforced: true, endsAt: health.promotion.endsAt};
+          document.dispatchEvent(new CustomEvent('tfl:receiver_ready', {detail: {promotion: root.TFL_RECEIVER_PROMOTION}}));
+        }
         status('');
       } catch (_) {
         status('Hệ thống nhận đơn đang được cập nhật. Bạn vui lòng quay lại sau.', 'error');
